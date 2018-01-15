@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 
 public class Utils {
 	public void writeLittleEndian(OutputStreamWriter stream, byte[] bytes) {
@@ -23,6 +24,6 @@ public class Utils {
 	}
 	
 	public static ByteString hashToMD5(byte[] bytes) {
-		return ByteString.copyFrom(Hashing.md5().hashBytes(bytes).asBytes());
+		return ByteString.copyFrom(Hashing.md5().hashBytes(bytes).toString(), Charset.defaultCharset());
 	}
 }

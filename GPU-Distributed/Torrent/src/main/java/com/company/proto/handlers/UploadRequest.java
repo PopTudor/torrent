@@ -7,11 +7,14 @@ import com.google.common.base.Strings;
 import com.google.protobuf.ByteString;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 public class UploadRequest implements Handler {
-	Map<Object, Torrent.FileInfo> storage = new HashMap<>();
+	Map<Object, ByteString> storage;
+	
+	public UploadRequest(Map<Object, ByteString> storage) {
+		this.storage = storage;
+	}
 	
 	@Override
 	public Torrent.Message handle(Torrent.Message message) {
@@ -38,14 +41,15 @@ public class UploadRequest implements Handler {
 					.setHash(Utils.hashToMD5(chunk))
 					.build();
 			
-			fileInfo.setChunks(j, chunkInfo);
+			fileInfo.addChunks(j, chunkInfo);
 		}
+		Torrent.FileInfo info = fileInfo.build();
 		
-		if (storage.containsKey(hash)) return successFileUploadResponse(storage.get(hash));
+		if (storage.containsKey(filename)) return successFileUploadResponse(info);
 		
-		storage.put(hash.toString(), fileInfo.build());
+		storage.put(filename, data);
 		
-		return successFileUploadResponse(storage.get(hash));
+		return successFileUploadResponse(info);
 	}
 	
 	private Torrent.Message errorFilenameEmptyResponse(Torrent.FileInfo.Builder fileInfo) {

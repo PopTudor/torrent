@@ -1,5 +1,7 @@
 package com.company.proto;
 
+import com.google.protobuf.ByteString;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,24 +18,40 @@ public class Client {
 				.setPort(5000)
 				.build();
 		
-		try (Socket s = new Socket(node.getHost(), node.getPort())) {
-			OutputStream output = new DataOutputStream(s.getOutputStream());
-			LocalSearchRequest searchRequest = LocalSearchRequest.newBuilder()
-					.setRegex("torrent")
-					.build();
+		try (Socket socket = new Socket(node.getHost(), node.getPort())) {
+			OutputStream output = new DataOutputStream(socket.getOutputStream());
 			
-			Message message = Message.newBuilder()
-					.setType(Message.Type.LOCAL_SEARCH_REQUEST)
-					.setLocalSearchRequest(searchRequest)
-					.build();
+			
+			Message message = uploadRequestTest();
 			byte len = messageLen(message);
 			len = littleEndian(len);
 			
 			output.write(len);
+			output.flush();
 			output.write(message.toByteArray());
 			output.flush();
+
+//			BufferedReader in =
+//					new BufferedReader(
+//							new InputStreamReader(socket.getInputStream()));
+//			String fromServer = in.readLine();
+//			InputStream input = new DataInputStream(socket.getInputStream());
+//			byte[] request = ByteStreams.toByteArray(input);
+
+//			Message responseMessage = Message.parseFrom(fromServer.getBytes());
+//			System.out.println("response: "+responseMessage);
 		}
-		
+	}
+	
+	private static Message uploadRequestTest() {
+		UploadRequest build = UploadRequest.newBuilder()
+				.setFilename("salut")
+				.setData(ByteString.copyFromUtf8("uploadReqauest test"))
+				.build();
+		return Message.newBuilder()
+				.setType(Message.Type.UPLOAD_REQUEST)
+				.setUploadRequest(build)
+				.build();
 	}
 	
 	public static byte messageLen(Message message) {
