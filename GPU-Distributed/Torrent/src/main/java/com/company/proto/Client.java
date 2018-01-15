@@ -1,17 +1,14 @@
 package com.company.proto;
 
-import javax.swing.*;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+
+import static com.company.proto.torrent.Torrent.Node;
 
 public class Client {
 	public static void main(String[] argv) throws IOException {
-		Torrent.Node node = Torrent.Node.newBuilder()
+		Node node = Node.newBuilder()
 				.setHost("localhost")
 				.setPort(5001)
 				.build();
