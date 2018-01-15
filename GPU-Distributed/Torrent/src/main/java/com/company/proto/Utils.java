@@ -1,7 +1,9 @@
 package com.company.proto;
 
+import com.google.common.hash.Hashing;
+import com.google.protobuf.ByteString;
+
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -18,5 +20,9 @@ public class Utils {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public static ByteString hashToMD5(byte[] bytes) {
+		return ByteString.copyFrom(Hashing.md5().hashBytes(bytes).asBytes());
 	}
 }

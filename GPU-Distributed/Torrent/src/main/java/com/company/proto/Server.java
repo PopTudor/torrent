@@ -30,7 +30,7 @@ public class Server {
 					int len = reader.read();
 					System.out.println(len);
 					byte[] filedata = ByteStreams.toByteArray(reader);
-//
+					
 					Torrent.Message message = Torrent.Message.parseFrom(filedata);
 					System.out.println(message.toString());
 					
