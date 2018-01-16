@@ -2,9 +2,9 @@ package com.company.proto;
 
 import com.google.protobuf.ByteString;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -15,38 +15,37 @@ public class Client {
 	public static void main(String[] argv) throws IOException {
 		Node node = Node.newBuilder()
 				.setHost("localhost")
-				.setPort(5000)
+				.setPort(5003)
 				.build();
 		
 		try (Socket socket = new Socket(node.getHost(), node.getPort())) {
-			OutputStream output = new DataOutputStream(socket.getOutputStream());
-			
+			DataOutputStream output = new DataOutputStream(socket.getOutputStream());
 			
 			Message message = uploadRequestTest();
-			byte len = messageLen(message);
-			len = littleEndian(len);
+			byte lenReq = Utils.messageLen(message);
+			lenReq = littleEndian(lenReq);
 			
-			output.write(len);
+			output.writeByte(lenReq);
+			output.write(message.toByteArray(), 0, lenReq);
 			output.flush();
-			output.write(message.toByteArray());
-			output.flush();
-
-//			BufferedReader in =
-//					new BufferedReader(
-//							new InputStreamReader(socket.getInputStream()));
-//			String fromServer = in.readLine();
-//			InputStream input = new DataInputStream(socket.getInputStream());
-//			byte[] request = ByteStreams.toByteArray(input);
-
-//			Message responseMessage = Message.parseFrom(fromServer.getBytes());
-//			System.out.println("response: "+responseMessage);
+			
+			DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+			byte lenRes = inputStream.readByte();
+			byte[] data = new byte[lenRes];
+			inputStream.readFully(data, 0, lenRes);
+			
+			
+			Message resMessage = Message.parseFrom(data);
+			System.out.println("response: " + resMessage);
+			
+			socket.close();
 		}
 	}
 	
 	private static Message uploadRequestTest() {
 		UploadRequest build = UploadRequest.newBuilder()
-				.setFilename("salut")
-				.setData(ByteString.copyFromUtf8("uploadReqauest test"))
+				.setFilename("")
+				.setData(ByteString.copyFromUtf8("uploadReqqqauest test"))
 				.build();
 		return Message.newBuilder()
 				.setType(Message.Type.UPLOAD_REQUEST)
@@ -54,14 +53,9 @@ public class Client {
 				.build();
 	}
 	
-	public static byte messageLen(Message message) {
-		Integer len = message.getSerializedSize();
-		return len.byteValue();
-	}
-	
 	public static byte littleEndian(byte b) {
 		ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[]{b});
 		byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		return byteBuffer.get(0);
+		return byteBuffer.get();
 	}
 }

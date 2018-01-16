@@ -1,5 +1,6 @@
 package com.company.proto;
 
+import com.company.proto.torrent.Torrent;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.ByteString;
 
@@ -10,6 +11,11 @@ import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 
 public class Utils {
+	public static byte messageLen(Torrent.Message message) {
+		Integer len = message.getSerializedSize();
+		return len.byteValue();
+	}
+	
 	public void writeLittleEndian(OutputStreamWriter stream, byte[] bytes) {
 		ByteBuffer bb = ByteBuffer.wrap(bytes);
 		bb.order(ByteOrder.LITTLE_ENDIAN);
