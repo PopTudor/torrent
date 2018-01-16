@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class UploadRequest implements Handler {
-	Map<Object, ByteString> storage;
+	Map<String, ByteString> storage;
 	
-	public UploadRequest(Map<Object, ByteString> storage) {
+	public UploadRequest(Map<String, ByteString> storage) {
 		this.storage = storage;
 	}
 	
