@@ -56,7 +56,7 @@ public class UploadRequest implements Handler {
 		Torrent.UploadResponse uploadResponse = Torrent.UploadResponse
 				.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
-				.setErrorMessage("Success")
+				.setErrorMessage("Filename must not be empty")
 				.setFileInfo(fileInfo)
 				.build();
 		return Torrent.Message.newBuilder()
