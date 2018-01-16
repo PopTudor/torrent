@@ -60,6 +60,7 @@ public class UploadRequest implements Handler {
 				.setFileInfo(fileInfo)
 				.build();
 		return Torrent.Message.newBuilder()
+				.setType(Torrent.Message.Type.UPLOAD_RESPONSE)
 				.setUploadResponse(uploadResponse)
 				.build();
 	}
@@ -72,6 +73,7 @@ public class UploadRequest implements Handler {
 				.setFileInfo(fileInfo)
 				.build();
 		return Torrent.Message.newBuilder()
+				.setType(Torrent.Message.Type.UPLOAD_RESPONSE)
 				.setUploadResponse(uploadResponse)
 				.build();
 	}

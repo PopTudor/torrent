@@ -15,10 +15,10 @@ import java.net.Socket;
 
 public class Server {
 	
-	public static void main(String[] args) throws IOException {
+	public Server(String host, int port) throws IOException {
 		Torrent.Node node = Torrent.Node.newBuilder()
-				.setHost("127.0.0.1")
-				.setPort(5001)
+				.setHost(host)
+				.setPort(port)
 				.build();
 		InetAddress inetAddress = InetAddress.getByName(node.getHost());
 		try (ServerSocket listener = new ServerSocket(node.getPort(), 0, inetAddress)) {
@@ -26,24 +26,34 @@ public class Server {
 			while (true) {
 				try (Socket socket = listener.accept()) {
 					DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-					byte len = inputStream.readByte();
-					System.out.println(len);
-					byte[] data = new byte[len];
-					inputStream.readFully(data, 0, len);
-					Torrent.Message message = Torrent.Message.parseFrom(data);
-					System.out.println(message.toString());
 					
+					Torrent.Message message = readMessageFrom(inputStream);
+					// .... processing .....
 					Handler handler = HandlerFactory.create(message);
 					Torrent.Message response = handler.handle(message);
 					
 					DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-					byte lenResponse = Utils.messageLen(response);
-					output.write(lenResponse);
-					output.write(response.toByteArray(), 0, lenResponse);
+					writeMessageTo(response, output);
 					
 					socket.close();
 				}
 			}
 		}
 	}
+	
+	private void writeMessageTo(Torrent.Message response, DataOutputStream output) throws IOException {
+		int resLen = response.getSerializedSize();
+		output.writeInt(resLen);
+		output.write(response.toByteArray(), 0, resLen);
+	}
+	
+	private Torrent.Message readMessageFrom(DataInputStream inputStream) throws IOException {
+		int reqLen = inputStream.readInt();
+		byte[] reqData = new byte[reqLen];
+		inputStream.readFully(reqData, 0, reqLen);
+		Torrent.Message message = Torrent.Message.parseFrom(reqData);
+		System.out.println("len:" + reqLen + "\n" + message.toString());
+		return message;
+	}
+	
 }

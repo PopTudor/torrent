@@ -15,22 +15,22 @@ public class Client {
 	public static void main(String[] argv) throws IOException {
 		Node node = Node.newBuilder()
 				.setHost("localhost")
-				.setPort(5003)
+				.setPort(5001)
 				.build();
 		
 		try (Socket socket = new Socket(node.getHost(), node.getPort())) {
 			DataOutputStream output = new DataOutputStream(socket.getOutputStream());
 			
 			Message message = uploadRequestTest();
-			byte lenReq = Utils.messageLen(message);
-			lenReq = littleEndian(lenReq);
+			int lenReq = message.getSerializedSize();
+//			lenReq = littleEndian(lenReq);
 			
-			output.writeByte(lenReq);
+			output.writeInt(lenReq);
 			output.write(message.toByteArray(), 0, lenReq);
 			output.flush();
 			
 			DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-			byte lenRes = inputStream.readByte();
+			int lenRes = inputStream.readInt();
 			byte[] data = new byte[lenRes];
 			inputStream.readFully(data, 0, lenRes);
 			

@@ -32,12 +32,12 @@ dependencies {
 }
 */
 buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
-    }
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
+	}
 }
 group 'Torrent'
 version '1.0-SNAPSHOT'
@@ -53,22 +53,42 @@ group 'Torrent'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
-
+apply plugin: 'application'
+mainClassName = "com.company.proto.Server"
 sourceCompatibility = 1.8
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
+task serverOne(type: JavaExec) {
+	classpath sourceSets.main.runtimeClasspath
+	main = "com.company.proto.Server"
+	args "127.0.0.1", "5001"
+}
+task serverTwo(type: JavaExec) {
+	classpath sourceSets.main.runtimeClasspath
+	main = "com.company.proto.Server"
+	args "127.0.0.1", "5002"
+}
+task serverThree(type: JavaExec) {
+	classpath sourceSets.main.runtimeClasspath
+	main = "com.company.proto.Server"
+	args "127.0.0.1", "5003"
+}
+task runAll << {
+	println 'Starting servers'
+}
+runAll.dependsOn(serverOne, serverTwo, serverThree)
 dependencies {
-    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-gradle-plugin
-    compile group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.8.3'
-    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.5.1'
-    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java-util
-    compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.5.1'
-    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-parent
-    compile group: 'com.google.protobuf', name: 'protobuf-parent', version: '3.5.1', ext: 'pom'
-    compile group: 'com.google.guava', name: 'guava', version: '23.5-jre'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+	// https://mvnrepository.com/artifact/com.google.protobuf/protobuf-gradle-plugin
+	compile group: 'com.google.protobuf', name: 'protobuf-gradle-plugin', version: '0.8.3'
+	// https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java
+	compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.5.1'
+	// https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java-util
+	compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.5.1'
+	// https://mvnrepository.com/artifact/com.google.protobuf/protobuf-parent
+	compile group: 'com.google.protobuf', name: 'protobuf-parent', version: '3.5.1', ext: 'pom'
+	compile group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+	testCompile group: 'junit', name: 'junit', version: '4.12'
 }
