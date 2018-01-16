@@ -26,12 +26,12 @@ public class Server {
 			while (true) {
 				try (Socket socket = listener.accept()) {
 					DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-					
+					// ..... receive .....
 					Torrent.Message message = readMessageFrom(inputStream);
-					// .... processing .....
+					// ..... process .....
 					Handler handler = HandlerFactory.create(message);
 					Torrent.Message response = handler.handle(message);
-					
+					// ..... respond ......
 					DataOutputStream output = new DataOutputStream(socket.getOutputStream());
 					writeMessageTo(response, output);
 					
@@ -40,19 +40,22 @@ public class Server {
 			}
 		}
 	}
-	
+
 	private void writeMessageTo(Torrent.Message response, DataOutputStream output) throws IOException {
-		int resLen = response.getSerializedSize();
-		output.writeInt(resLen);
-		output.write(response.toByteArray(), 0, resLen);
+		int len = response.getSerializedSize();
+		byte[] data = response.toByteArray();
+		System.out.println("****** response ******\nlen:" + len + "\n" + response.toString());
+		output.writeInt((len));
+		output.write(data, 0, len);
+		output.flush();
 	}
 	
 	private Torrent.Message readMessageFrom(DataInputStream inputStream) throws IOException {
-		int reqLen = inputStream.readInt();
-		byte[] reqData = new byte[reqLen];
-		inputStream.readFully(reqData, 0, reqLen);
-		Torrent.Message message = Torrent.Message.parseFrom(reqData);
-		System.out.println("len:" + reqLen + "\n" + message.toString());
+		int len = inputStream.readInt();
+		byte[] data = new byte[len];
+		inputStream.readFully(data, 0, len);
+		Torrent.Message message = Torrent.Message.parseFrom(data);
+		System.out.println("****** request ******\nlen:" + len + "\n" + message.toString());
 		return message;
 	}
 	
