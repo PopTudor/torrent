@@ -10,15 +10,12 @@ import java.util.Map;
 
 public class ChunkHandler implements Handler {
 	private Map<String, ByteString> storage;
-	private Map<String, String> filenameHashes;
+	private Map<ByteString, String> filenameHashes;
 	
 	public ChunkHandler(Map<String, ByteString> storage) {
 		this.storage = storage;
 		filenameHashes = new HashMap<>(storage.size());
-		storage.forEach((key, value) -> {
-			String fileHash = Utils.hashToMD5(key.getBytes()).toStringUtf8();
-			filenameHashes.put(fileHash, key);
-		});
+		storage.forEach((key, value) -> filenameHashes.put(Utils.hashToMD5(value.toByteArray()), key));
 	}
 	
 	@Override
@@ -28,7 +25,7 @@ public class ChunkHandler implements Handler {
 		
 		if (hash.size() != 16 || chunkIndex < 0) return messageError();
 		// if don't have file, return error
-		boolean hasHash = filenameHashes.containsKey(hash.toStringUtf8());
+		boolean hasHash = filenameHashes.containsKey(hash);
 		if (hasHash) {
 			String filename = filenameHashes.get(hash);
 			return chunkData(storage.get(filename), chunkIndex);
@@ -36,9 +33,8 @@ public class ChunkHandler implements Handler {
 	}
 	
 	private Torrent.Message chunkData(ByteString bytes, int chunkIndex) {
-		int i = chunkIndex * 1024;
+		int i = chunkIndex * Constants.CHUNK_SIZE;
 		ByteString data = ByteString.copyFrom(bytes.toByteArray(), i, Math.min(bytes.size(), i + Constants.CHUNK_SIZE));
-//		Arrays.copyOfRange(bytes.toByteArray(), i,Math.min(bytes.size(), i + Constants.CHUNK_SIZE) );
 		Torrent.ChunkResponse build = Torrent.ChunkResponse
 				.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)

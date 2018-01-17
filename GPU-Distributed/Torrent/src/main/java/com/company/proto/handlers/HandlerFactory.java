@@ -12,11 +12,11 @@ public class HandlerFactory {
 	private static Map<String, ByteString> storage = new HashMap<>();
 	private static List<Duplicate> duplicates = new ArrayList<>();
 	
-	public static Handler create(Torrent.Message message) {
+	public static Handler create(Torrent.Message message, Torrent.Node node) {
 		if (message.hasUploadRequest())
 			return new UploadRequest(storage);
 		else if (message.hasReplicateRequest())
-			return new ReplicateHandler(storage, duplicates);
+			return new ReplicateHandler(storage, duplicates, node);
 		else if (message.hasLocalSearchRequest())
 			throw new RuntimeException("Invalid Message Type");
 		else if (message.hasLocalSearchRequest())

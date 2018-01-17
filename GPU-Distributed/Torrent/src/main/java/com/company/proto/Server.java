@@ -12,6 +12,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import static com.company.proto.UtilsIO.readMessageFrom;
+import static com.company.proto.UtilsIO.writeMessageTo;
+
 
 public class Server {
 	
@@ -29,7 +32,7 @@ public class Server {
 					// ..... receive .....
 					Torrent.Message message = readMessageFrom(inputStream);
 					// ..... process .....
-					Handler handler = HandlerFactory.create(message);
+					Handler handler = HandlerFactory.create(message, node);
 					Torrent.Message response = handler.handle(message);
 					// ..... respond ......
 					DataOutputStream output = new DataOutputStream(socket.getOutputStream());
@@ -39,24 +42,6 @@ public class Server {
 				}
 			}
 		}
-	}
-
-	private void writeMessageTo(Torrent.Message response, DataOutputStream output) throws IOException {
-		int len = response.getSerializedSize();
-		byte[] data = response.toByteArray();
-		System.out.println("****** response ******\nlen:" + len + "\n" + response.toString());
-		output.writeInt((len));
-		output.write(data, 0, len);
-		output.flush();
-	}
-	
-	private Torrent.Message readMessageFrom(DataInputStream inputStream) throws IOException {
-		int len = inputStream.readInt();
-		byte[] data = new byte[len];
-		inputStream.readFully(data, 0, len);
-		Torrent.Message message = Torrent.Message.parseFrom(data);
-		System.out.println("****** request ******\nlen:" + len + "\n" + message.toString());
-		return message;
 	}
 	
 }
