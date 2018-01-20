@@ -18,19 +18,14 @@ public class HandlerFactory {
 		else if (message.hasReplicateRequest())
 			return new ReplicateHandler(storage, duplicates, node);
 		else if (message.hasLocalSearchRequest())
-			throw new RuntimeException("Invalid Message Type");
-		else if (message.hasLocalSearchRequest())
-			return new LocalSearchHandler();
+			return new LocalSearchHandler(storage);
 		else if (message.hasSearchRequest())
-			throw new RuntimeException("Invalid Message Type");
-		else if (message.hasSearchRequest())
-			throw new RuntimeException("Invalid Message Type");
+			return new SearchHandler();
 		else if (message.hasDownloadRequest())
-			throw new RuntimeException("Invalid Message Type");
+			return new DownloadHandler();
 		else if (message.hasChunkRequest()) {
 			return new ChunkHandler(storage);
 		}
-		
-		throw new RuntimeException("Invalid Message Type");
+		return new EmptyHandler();
 	}
 }

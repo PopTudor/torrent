@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
 	public static byte messageLen(Torrent.Message message) {
@@ -32,5 +35,25 @@ public class Utils {
 	public static ByteString hashToMD5(byte[] bytes) {
 		HashCode hashCode = Hashing.md5().hashBytes(bytes);
 		return ByteString.copyFrom(hashCode.asBytes());
+	}
+	
+	public static Iterable<Torrent.ChunkInfo> toList(ByteString bytes) {
+		return toList(bytes.toByteArray());
+	}
+	
+	public static Iterable<Torrent.ChunkInfo> toList(byte[] data) {
+		List<Torrent.ChunkInfo> chunkInfos = new ArrayList<>();
+		for (int i = 0, index = 0; i < data.length; i += Constants.CHUNK_SIZE, index++) {
+			byte[] chunk = Arrays.copyOfRange(data, i, Math.min(data.length, i + Constants.CHUNK_SIZE));
+			
+			Torrent.ChunkInfo chunkInfo = Torrent.ChunkInfo
+					.newBuilder()
+					.setIndex(index)
+					.setSize(chunk.length)
+					.setHash(Utils.hashToMD5(chunk))
+					.build();
+			chunkInfos.add(chunkInfo);
+		}
+		return chunkInfos;
 	}
 }
