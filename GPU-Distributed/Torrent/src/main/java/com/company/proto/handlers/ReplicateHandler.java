@@ -91,11 +91,13 @@ public class ReplicateHandler implements Handler {
 							.newBuilder()
 							.setNode(node)
 							.setChunkIndex(chunkInfo.getIndex())
-							.setErrorMessage("NETWORK_ERROR");
+							;
 					if (error instanceof ConnectException) {
+						replicateResponse.setErrorMessage("NETWORK_ERROR");
 						replicationStatus.setStatus(Torrent.Status.NETWORK_ERROR);
 					} else
 						replicationStatus.setStatus(Torrent.Status.PROCESSING_ERROR);
+						replicateResponse.setErrorMessage("PROCESSING_ERROR");
 					replicateResponse.addNodeStatusList(replicationStatus.build());
 					error.printStackTrace();
 				}

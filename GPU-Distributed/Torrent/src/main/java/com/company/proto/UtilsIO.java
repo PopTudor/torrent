@@ -20,7 +20,7 @@ public class UtilsIO {
 		int len = response.getSerializedSize();
 		byte[] data = response.toByteArray();
 		System.out.println("****** response ******\nlen:" + len + "\n" + response.toString());
-		output.writeInt((len));
+		output.writeInt(len);
 		output.write(data, 0, len);
 		output.flush();
 	}

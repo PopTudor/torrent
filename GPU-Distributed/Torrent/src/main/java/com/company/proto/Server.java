@@ -28,9 +28,9 @@ public class Server {
 			System.out.printf("Listening on: %s:%d\n", listener.getLocalSocketAddress(), listener.getLocalPort());
 			while (true) {
 				try (Socket socket = listener.accept()) {
-					DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+					DataInputStream input = new DataInputStream(socket.getInputStream());
 					// ..... receive .....
-					Torrent.Message message = readMessageFrom(inputStream);
+					Torrent.Message message = readMessageFrom(input);
 					// ..... process .....
 					Handler handler = HandlerFactory.create(message, node);
 					Torrent.Message response = handler.handle(message);
@@ -38,6 +38,8 @@ public class Server {
 					DataOutputStream output = new DataOutputStream(socket.getOutputStream());
 					writeMessageTo(response, output);
 					
+					input.close();
+					output.close();
 					socket.close();
 				}
 			}

@@ -12,11 +12,22 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class Utils {
 	public static byte messageLen(Torrent.Message message) {
 		Integer len = message.getSerializedSize();
 		return len.byteValue();
+	}
+	
+	public static boolean isValid(String regex) {
+		try {
+			Pattern.compile(regex);
+			return true;
+		} catch (PatternSyntaxException exception) {
+			return false;
+		}
 	}
 	
 	public void writeLittleEndian(OutputStreamWriter stream, byte[] bytes) {

@@ -20,7 +20,7 @@ public class HandlerFactory {
 		else if (message.hasLocalSearchRequest())
 			return new LocalSearchHandler(storage);
 		else if (message.hasSearchRequest())
-			return new SearchHandler();
+			return new SearchHandler(storage,node);
 		else if (message.hasDownloadRequest())
 			return new DownloadHandler();
 		else if (message.hasChunkRequest()) {

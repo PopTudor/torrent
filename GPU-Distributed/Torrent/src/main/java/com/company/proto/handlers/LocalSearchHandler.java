@@ -5,8 +5,6 @@ import com.company.proto.torrent.Torrent;
 import com.google.protobuf.ByteString;
 
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 public class LocalSearchHandler implements Handler {
 	private Map<String, ByteString> storage;
@@ -15,20 +13,11 @@ public class LocalSearchHandler implements Handler {
 		this.storage = storage;
 	}
 	
-	private static boolean isValid(String regex) {
-		try {
-			Pattern.compile(regex);
-			return true;
-		} catch (PatternSyntaxException exception) {
-			return false;
-		}
-	}
-	
 	@Override
 	public Torrent.Message handle(Torrent.Message message) {
 		String regex = message.getLocalSearchRequest().getRegex();
 		
-		if (!isValid(regex)) return messageError(regex);
+		if (!Utils.isValid(regex)) return messageError(regex);
 		
 		String resultFilename = storage.keySet().stream()
 				.filter(filename -> filename.matches(regex))
@@ -42,9 +31,9 @@ public class LocalSearchHandler implements Handler {
 		byte[] fileData = storage.get(resultFilename).toByteArray();
 		Torrent.FileInfo fileInfo = Torrent.FileInfo.newBuilder()
 				.setFilename(resultFilename)
-				.setHash(Utils.hashToMD5(fileData))
-				.setSize(fileData.length)
-				.addAllChunks(Utils.toList(fileData))
+//				.setHash(Utils.hashToMD5(fileData))
+//				.setSize(fileData.length)
+//				.addAllChunks(Utils.toList(fileData))
 				.build();
 		Torrent.LocalSearchResponse searchResponse = Torrent.LocalSearchResponse
 				.newBuilder()
@@ -76,7 +65,8 @@ public class LocalSearchHandler implements Handler {
 	
 	private Torrent.Message messageError(String filename) {
 		Torrent.FileInfo fileInfo = Torrent.FileInfo.newBuilder()
-				.setFilename(filename).build();
+				.setFilename(filename)
+				.build();
 		Torrent.LocalSearchResponse searchResponse = Torrent.LocalSearchResponse
 				.newBuilder()
 				.setStatus(Torrent.Status.MESSAGE_ERROR)
