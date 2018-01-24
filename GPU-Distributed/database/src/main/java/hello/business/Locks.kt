@@ -1,4 +1,4 @@
-package hello.management
+package hello.business
 
 import org.springframework.stereotype.Service
 

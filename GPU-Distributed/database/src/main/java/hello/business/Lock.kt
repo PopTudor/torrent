@@ -1,6 +1,4 @@
-package hello.management
-
-import org.springframework.stereotype.Service
+package hello.business
 
 data class Lock(val id: Int, val type: LockType, val record: Any, val transactionId: Int)
 

@@ -1,27 +1,14 @@
 package hello
 
+import hello.data.DepositStatus
 import hello.data.account.Account
 import hello.data.account.AccountRepository
-import hello.data.DepositStatus
-import hello.data.payment.Payment
 import hello.data.payment.PaymentRepository
 import org.springframework.stereotype.Service
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
 
 @Service
 class AccountManagementService(val accountRepository: AccountRepository,
 							   val paymentRepository: PaymentRepository) {
-	val lock: Lock = ReentrantLock()
-	
-	init {
-		accountRepository.save(Account("tudor", "parola"))
-		accountRepository.save(Account("tudor2", "parola3"))
-		accountRepository.save(Account("tudor3", "parola2"))
-		accountRepository.save(Account("tudor1", "parola1"))
-		paymentRepository.save(Payment("tudor","tudor2"))
-	}
-	
 	fun deposit(deposit: Double, user: String): DepositStatus {
 		val account = retrieveUser(user) ?: return DepositStatus(0.0, "User not found")
 		updateAccount(account, deposit)
@@ -31,12 +18,6 @@ class AccountManagementService(val accountRepository: AccountRepository,
 		
 		
 		return DepositStatus(deposit, account.toString())
-	}
-	
-	private fun lock(function: () -> Unit) {
-		lock.lock()
-		function()
-		lock.unlock()
 	}
 	
 	private fun updateLog(account: Account) {
@@ -51,7 +32,6 @@ class AccountManagementService(val accountRepository: AccountRepository,
 		accountRepository.save(account)
 		
 	}
-	
 	private fun updateAccount(account: Account, deposit: Double) {
 		account.balance += deposit
 	}
