@@ -19,10 +19,10 @@ class AccountManagementService(val accountRepository: AccountRepository,
 		accountRepository.save(Account("tudor2", "parola3"))
 		accountRepository.save(Account("tudor3", "parola2"))
 		accountRepository.save(Account("tudor1", "parola1"))
+		paymentRepository.save(Payment("tudor","tudor2"))
 	}
 	
 	fun deposit(deposit: Double, user: String): DepositStatus {
-		paymentRepository.save(Payment(1,2))
 		val account = retrieveUser(user) ?: return DepositStatus(0.0, "User not found")
 		updateAccount(account, deposit)
 		saveAccount(account)

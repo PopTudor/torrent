@@ -1,17 +1,18 @@
 package hello.data.payment
 
-import hello.data.account.Account
 import java.sql.Timestamp
 import javax.persistence.*
 
 @Entity
-data class Payment(
-		val senderId: Int? = null,
-		val receiverId: Int? = null
+class Payment(
+		var sender: String = "",
+		var receiver: String = ""
 ) {
-	@javax.persistence.Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	var id: Long? = null
-	val timestamp = Timestamp(System.currentTimeMillis())
+	@Id
+	@SequenceGenerator(name = "pk_sequence", sequenceName = "entity_id_seq", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pk_sequence")
+	@Column(name = "id", unique = true, nullable = false)
+	val id = 0
+	var timestamp = Timestamp(System.currentTimeMillis())
 	
 }
