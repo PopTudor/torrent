@@ -1,5 +1,15 @@
 package hello.business
 
-data class Lock(val id: Int, val type: LockType, val record: Any, val transactionId: Int)
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
+data class Lock(
+		val type: LockType,
+		val record: Any,
+		val table: String,
+		val transaction: Transaction
+) : ReentrantReadWriteLock() {
+	val id: Int = randInt()
+	
+}
 
 enum class LockType { READ, WRITE }
