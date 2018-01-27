@@ -25,7 +25,7 @@ class LocalSearchHandler(private val storage: Map<String, ByteString>) : Handler
 		val fileData = storage[resultFilename]?.toByteArray()
 		val fileInfo = Torrent.FileInfo.newBuilder()
 				.setFilename(resultFilename)
-				//				.setHash(Utils.hashToMD5(fileData))
+				//				.setHash(Utils.toMD5Hash(fileData))
 				//				.setSize(fileData.length)
 				//				.addAllChunks(Utils.toList(fileData))
 				.build()

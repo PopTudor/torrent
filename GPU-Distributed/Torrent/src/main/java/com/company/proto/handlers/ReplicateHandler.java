@@ -44,7 +44,7 @@ public class ReplicateHandler implements Handler {
 	}
 	
 	private boolean haveFileLocally(ByteString hash, ByteString bytes) {
-		return UtilsKt.hashToMD5(bytes.toByteArray()).equals(hash);
+		return UtilsKt.toMD5Hash(bytes).equals(hash);
 	}
 	
 	private Torrent.Message messageError() {

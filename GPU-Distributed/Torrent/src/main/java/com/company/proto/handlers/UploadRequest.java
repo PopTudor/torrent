@@ -21,7 +21,7 @@ public class UploadRequest implements Handler {
 		String filename = message.getUploadRequest().getFilename();
 		ByteString data = message.getUploadRequest().getData();
 		byte[] dataBytes = data.toByteArray();
-		ByteString hash = UtilsKt.hashToMD5(dataBytes);
+		ByteString hash = UtilsKt.toMD5Hash(dataBytes);
 		
 		Torrent.FileInfo.Builder fileInfo = Torrent.FileInfo
 				.newBuilder()
@@ -38,7 +38,7 @@ public class UploadRequest implements Handler {
 					.newBuilder()
 					.setIndex(j)
 					.setSize(chunk.length)
-					.setHash(UtilsKt.hashToMD5(chunk))
+					.setHash(UtilsKt.toMD5Hash(chunk))
 					.build();
 			
 			fileInfo.addChunks(j, chunkInfo);

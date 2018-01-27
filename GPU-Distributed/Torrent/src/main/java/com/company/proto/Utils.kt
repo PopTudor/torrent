@@ -1,7 +1,6 @@
 package com.company.proto
 
 import com.company.proto.torrent.Torrent
-import com.google.common.hash.HashCode
 import com.google.common.hash.Hashing
 import com.google.protobuf.ByteString
 
@@ -43,10 +42,13 @@ fun String.isValidRegex(): Boolean {
 	}
 }
 
-fun ByteArray.hashToMD5(): ByteString {
+fun ByteArray.toMD5Hash(): ByteString {
 	val hashCode = Hashing.md5().hashBytes(this)
 	return ByteString.copyFrom(hashCode.asBytes())
 }
+
+fun ByteString.toMD5Hash() = this.toByteArray().toMD5Hash()
+
 
 fun ByteString.toList(): Iterable<Torrent.ChunkInfo> {
 	return this.toByteArray().toList()
@@ -63,7 +65,7 @@ fun ByteArray.toList(): Iterable<Torrent.ChunkInfo> {
 				.newBuilder()
 				.setIndex(index)
 				.setSize(chunk.size)
-				.setHash(chunk.hashToMD5())
+				.setHash(chunk.toMD5Hash())
 				.build()
 		chunkInfos.add(chunkInfo)
 		i += Constants.CHUNK_SIZE
