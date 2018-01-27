@@ -23,6 +23,7 @@ public class Utils {
 	
 	public static boolean isValid(String regex) {
 		try {
+			if (regex.isEmpty()) throw new PatternSyntaxException("Empty regex", regex, 0);
 			Pattern.compile(regex);
 			return true;
 		} catch (PatternSyntaxException exception) {

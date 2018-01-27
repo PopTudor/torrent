@@ -17,14 +17,14 @@ public class LocalSearchHandler implements Handler {
 	public Torrent.Message handle(Torrent.Message message) {
 		String regex = message.getLocalSearchRequest().getRegex();
 		
-		if (!Utils.isValid(regex)) return messageError(regex);
+		if (!Utils.isValid(regex) || regex.isEmpty()) return messageError(regex);
 		
 		String resultFilename = storage.keySet().stream()
 				.filter(filename -> filename.matches(regex))
 				.findAny()
 				.orElse("");
 		if (resultFilename.isEmpty()) return successNoResult(regex);
-		else return successWithResult(resultFilename);
+		else return successWithResult(regex);
 	}
 	
 	private Torrent.Message successWithResult(String resultFilename) {
