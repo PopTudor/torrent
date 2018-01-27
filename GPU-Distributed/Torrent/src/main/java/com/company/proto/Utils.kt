@@ -49,7 +49,6 @@ fun ByteArray.toMD5Hash(): ByteString {
 
 fun ByteString.toMD5Hash() = this.toByteArray().toMD5Hash()
 
-
 fun ByteString.toList(): Iterable<Torrent.ChunkInfo> {
 	return this.toByteArray().toList()
 }

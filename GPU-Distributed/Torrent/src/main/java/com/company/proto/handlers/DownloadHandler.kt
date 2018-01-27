@@ -9,12 +9,13 @@ class DownloadHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : 
 		val filehash = message.downloadRequest.fileHash
 		
 		if (filehash.size() != 16) return errorMessage()
-		
-		val (fileKey, filedata) = storage.entries.find { (key, _) -> key.hash == filehash }
+
+		val (fileKey, filedata) = storage.entries.find { (fileInfo, _) -> fileInfo.hash == filehash }
 				?: return unableToComplete()
 		
 		val downloadResponse = Torrent.DownloadResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
+				.setErrorMessage(Torrent.Status.SUCCESS.toString())
 				.setData(filedata)
 				.build()
 		return Torrent.Message.newBuilder()
@@ -26,7 +27,7 @@ class DownloadHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : 
 	private fun unableToComplete(): Torrent.Message {
 		val build = Torrent.DownloadResponse.newBuilder()
 				.setStatus(Torrent.Status.UNABLE_TO_COMPLETE)
-				.setErrorMessage(Torrent.Status.UNABLE_TO_COMPLETE.toString())
+				.setErrorMessage("ce plms")
 				.build()
 		return Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.DOWNLOAD_RESPONSE)

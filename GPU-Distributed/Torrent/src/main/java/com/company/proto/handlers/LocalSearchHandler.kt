@@ -9,27 +9,16 @@ class LocalSearchHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val regex = message.localSearchRequest.regex
 		
-		if (!regex.isValidRegex()) return messageError(regex);
+		if (!regex.isValidRegex()) return messageError(regex)
 		
-		val resultFilename = storage.keys.stream()
-				.map { t -> t.filename }
-				.filter { filename -> filename.matches(regex.toRegex()) }
-				.findAny()
-				.orElse("")
-		return if (resultFilename.isEmpty())
-			successNoResult(regex)
-		else
-			successWithResult(regex)
+		val fileInfo = storage.keys
+				.find { regex.toRegex().matches(it.filename) }
+				?: return successNoResult()
+		
+		return successWithResult(fileInfo)
 	}
 	
-	private fun successWithResult(resultFilename: String): Torrent.Message {
-//		val fileData = storage[resultFilename]?.toByteArray()
-		val fileInfo = Torrent.FileInfo.newBuilder()
-				.setFilename(resultFilename)
-				//				.setHash(Utils.toMD5Hash(fileData))
-				//				.setSize(fileData.length)
-				//				.addAllChunks(Utils.toList(fileData))
-				.build()
+	private fun successWithResult(fileInfo: Torrent.FileInfo): Torrent.Message {
 		val searchResponse = Torrent.LocalSearchResponse
 				.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
@@ -42,15 +31,11 @@ class LocalSearchHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 				.build()
 	}
 	
-	private fun successNoResult(filename: String): Torrent.Message {
-		val fileInfo = Torrent.FileInfo.newBuilder()
-				.setFilename(filename)
-				.build()
+	private fun successNoResult(): Torrent.Message {
 		val searchResponse = Torrent.LocalSearchResponse
 				.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
-				.setErrorMessage("SUCCESS")
-				.addFileInfo(fileInfo)
+				.setErrorMessage(Torrent.Status.SUCCESS.toString())
 				.build()
 		return Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.LOCAL_SEARCH_RESPONSE)
@@ -73,4 +58,9 @@ class LocalSearchHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 				.setLocalSearchResponse(searchResponse)
 				.build()
 	}
+	fun toList(byteString: ByteString): Iterable<Torrent.ChunkInfo> {
+		return byteString.toByteArray().toList()
+	}
+	
 }
+
