@@ -19,12 +19,10 @@ import static com.company.proto.UtilsIO.readMessageFrom;
 import static com.company.proto.UtilsIO.writeMessageTo;
 
 public class SearchHandler implements Handler {
-	private Map<String, ByteString> storage;
 	private Torrent.Node currentNode;
 	private LocalSearchHandler localSearchHandler;
 	
-	public SearchHandler(Map<String, ByteString> storage, Torrent.Node currentNode) {
-		this.storage = storage;
+	public SearchHandler(Map<Torrent.FileInfo, ByteString> storage, Torrent.Node currentNode) {
 		this.currentNode = currentNode;
 		this.localSearchHandler = new LocalSearchHandler(storage);
 	}

@@ -17,11 +17,11 @@ import static com.company.proto.UtilsIO.readMessageFrom;
 import static com.company.proto.UtilsIO.writeMessageTo;
 
 public class ReplicateHandler implements Handler {
-	private final Map<String, ByteString> storage;
+	private final Map<Torrent.FileInfo, ByteString> storage;
 	private final List<Duplicate> duplicates;
 	private Torrent.Node currentNode;
 	
-	public ReplicateHandler(Map<String, ByteString> storage, List<Duplicate> duplicates, Torrent.Node node) {
+	public ReplicateHandler(Map<Torrent.FileInfo, ByteString> storage, List<Duplicate> duplicates, Torrent.Node node) {
 		this.storage = storage;
 		this.duplicates = duplicates;
 		currentNode = node;
@@ -35,7 +35,7 @@ public class ReplicateHandler implements Handler {
 		if (StringUtils.isEmpty(filename)) return messageError();
 		
 		storage.forEach((s, bytes) -> {
-			if (haveFileLocally(hash, bytes))
+			if (haveFileLocally(hash, s.getHash()))
 				duplicates.add(new Duplicate(filename, bytes));
 		});
 		boolean contains = duplicates.stream().anyMatch(duplicate -> duplicate.getFilename().equals(filename));
@@ -44,7 +44,7 @@ public class ReplicateHandler implements Handler {
 	}
 	
 	private boolean haveFileLocally(ByteString hash, ByteString bytes) {
-		return UtilsKt.toMD5Hash(bytes).equals(hash);
+		return bytes.equals(hash);
 	}
 	
 	private Torrent.Message messageError() {

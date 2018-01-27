@@ -11,13 +11,13 @@ import java.util.Map;
 import static com.company.proto.UtilsKt.toMD5Hash;
 
 public class ChunkHandler implements Handler {
-	private Map<String, ByteString> storage;
+	private Map<Torrent.FileInfo, ByteString> storage;
 	private Map<ByteString, String> filenameHashes;
 	
-	public ChunkHandler(Map<String, ByteString> storage) {
+	public ChunkHandler(Map<Torrent.FileInfo, ByteString> storage) {
 		this.storage = storage;
 		filenameHashes = new HashMap<>(storage.size());
-		storage.forEach((key, value) -> filenameHashes.put(UtilsKt.toMD5Hash(value.toByteArray()), key));
+		storage.forEach((key, value) -> filenameHashes.put(UtilsKt.toMD5Hash(value.toByteArray()), key.getFilename()));
 	}
 	
 	@Override
@@ -30,7 +30,14 @@ public class ChunkHandler implements Handler {
 		boolean hasHash = filenameHashes.containsKey(hash);
 		if (hasHash) {
 			String filename = filenameHashes.get(hash);
-			return chunkData(storage.get(filename), chunkIndex);
+			ByteString bytes = ByteString.EMPTY;
+			for (Map.Entry<Torrent.FileInfo, ByteString> it : storage.entrySet()) {
+				if (it.getKey().getFilename().equals(filename)) {
+					bytes = it.getValue();
+					break;
+				}
+			}
+			return chunkData(bytes, chunkIndex);
 		} else return unableToComplete();
 	}
 	

@@ -4,7 +4,7 @@ import com.company.proto.*
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
 
-class LocalSearchHandler(private val storage: Map<String, ByteString>) : Handler {
+class LocalSearchHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : Handler {
 	
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val regex = message.localSearchRequest.regex
@@ -12,6 +12,7 @@ class LocalSearchHandler(private val storage: Map<String, ByteString>) : Handler
 		if (!regex.isValidRegex()) return messageError(regex);
 		
 		val resultFilename = storage.keys.stream()
+				.map { t -> t.filename }
 				.filter { filename -> filename.matches(regex.toRegex()) }
 				.findAny()
 				.orElse("")
@@ -22,7 +23,7 @@ class LocalSearchHandler(private val storage: Map<String, ByteString>) : Handler
 	}
 	
 	private fun successWithResult(resultFilename: String): Torrent.Message {
-		val fileData = storage[resultFilename]?.toByteArray()
+//		val fileData = storage[resultFilename]?.toByteArray()
 		val fileInfo = Torrent.FileInfo.newBuilder()
 				.setFilename(resultFilename)
 				//				.setHash(Utils.toMD5Hash(fileData))

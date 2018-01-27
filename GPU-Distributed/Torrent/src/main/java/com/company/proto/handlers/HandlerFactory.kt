@@ -7,7 +7,7 @@ import java.util.ArrayList
 import java.util.HashMap
 
 object HandlerFactory {
-	private val storage = HashMap<String, ByteString>()
+	private val storage = HashMap<Torrent.FileInfo, ByteString>()
 	private val duplicates = ArrayList<Duplicate>()
 	
 	fun create(message: Torrent.Message, node: Torrent.Node) = when {

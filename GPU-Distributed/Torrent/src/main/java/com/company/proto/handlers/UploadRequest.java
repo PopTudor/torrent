@@ -7,12 +7,13 @@ import com.google.common.base.Strings;
 import com.google.protobuf.ByteString;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class UploadRequest implements Handler {
-	Map<String, ByteString> storage;
+	Map<Torrent.FileInfo, ByteString> storage;
 	
-	public UploadRequest(Map<String, ByteString> storage) {
+	public UploadRequest(Map<Torrent.FileInfo, ByteString> storage) {
 		this.storage = storage;
 	}
 	
@@ -45,9 +46,16 @@ public class UploadRequest implements Handler {
 		}
 		Torrent.FileInfo info = fileInfo.build();
 		
-		if (storage.containsKey(filename)) return successFileUploadResponse(info);
-		
-		storage.put(filename, data);
+		for (Torrent.FileInfo it : storage.keySet()) {
+			if (it.getFilename().equals(filename))
+				return successFileUploadResponse(info);
+		}
+		Torrent.FileInfo fileInfo1 = Torrent.FileInfo.newBuilder()
+				.setHash(hash)
+				.setSize(data.size())
+				.setFilename(filename)
+				.build();
+		storage.put(fileInfo1, data);
 		
 		return successFileUploadResponse(info);
 	}

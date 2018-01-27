@@ -4,14 +4,14 @@ import com.company.proto.toMD5Hash
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
 
-class DownloadHandler(private val storage: Map<String, ByteString>) : Handler {
+class DownloadHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : Handler {
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val filehash = message.downloadRequest.fileHash
 		
 		if (filehash.size() != 16) return errorMessage()
 		
-		val filedata = storage.values.find { it.toMD5Hash() == filehash }
-		if (filedata == null) return unableToComplete()
+		val (fileKey, filedata) = storage.entries.find { (key, _) -> key.hash == filehash }
+				?: return unableToComplete()
 		
 		val downloadResponse = Torrent.DownloadResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
