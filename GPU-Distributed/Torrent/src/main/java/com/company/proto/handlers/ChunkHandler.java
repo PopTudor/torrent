@@ -1,12 +1,13 @@
 package com.company.proto.handlers;
 
 import com.company.proto.Constants;
-import com.company.proto.Utils;
 import com.company.proto.torrent.Torrent;
 import com.google.protobuf.ByteString;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.company.proto.UtilsKt.hashToMD5;
 
 public class ChunkHandler implements Handler {
 	private Map<String, ByteString> storage;
@@ -15,7 +16,7 @@ public class ChunkHandler implements Handler {
 	public ChunkHandler(Map<String, ByteString> storage) {
 		this.storage = storage;
 		filenameHashes = new HashMap<>(storage.size());
-		storage.forEach((key, value) -> filenameHashes.put(Utils.hashToMD5(value.toByteArray()), key));
+		storage.forEach((key, value) -> filenameHashes.put(hashToMD5(value.toByteArray()), key));
 	}
 	
 	@Override

@@ -1,7 +1,7 @@
 package com.company.proto.handlers;
 
 import com.company.proto.NodeConfig;
-import com.company.proto.Utils;
+import com.company.proto.UtilsKt;
 import com.company.proto.torrent.Torrent;
 import com.google.protobuf.ByteString;
 import io.reactivex.schedulers.Timed;
@@ -33,7 +33,7 @@ public class SearchHandler implements Handler {
 	public Torrent.Message handle(Torrent.Message message) {
 		String regex = message.getSearchRequest().getRegex();
 		
-		if (!Utils.isValid(regex)) return messageError(regex);
+		if (!UtilsKt.isValidRegex(regex)) return messageError(regex);
 		
 		Torrent.LocalSearchRequest build = Torrent.LocalSearchRequest.newBuilder()
 				.setRegex(regex)

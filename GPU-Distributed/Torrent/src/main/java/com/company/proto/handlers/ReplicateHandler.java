@@ -1,6 +1,6 @@
 package com.company.proto.handlers;
 
-import com.company.proto.Utils;
+import com.company.proto.UtilsKt;
 import com.company.proto.torrent.Torrent;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +44,7 @@ public class ReplicateHandler implements Handler {
 	}
 	
 	private boolean haveFileLocally(ByteString hash, ByteString bytes) {
-		return Utils.hashToMD5(bytes.toByteArray()).equals(hash);
+		return UtilsKt.hashToMD5(bytes.toByteArray()).equals(hash);
 	}
 	
 	private Torrent.Message messageError() {

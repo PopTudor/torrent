@@ -1,7 +1,7 @@
 package com.company.proto.handlers;
 
 import com.company.proto.Constants;
-import com.company.proto.Utils;
+import com.company.proto.UtilsKt;
 import com.company.proto.torrent.Torrent;
 import com.google.common.base.Strings;
 import com.google.protobuf.ByteString;
@@ -21,7 +21,7 @@ public class UploadRequest implements Handler {
 		String filename = message.getUploadRequest().getFilename();
 		ByteString data = message.getUploadRequest().getData();
 		byte[] dataBytes = data.toByteArray();
-		ByteString hash = Utils.hashToMD5(dataBytes);
+		ByteString hash = UtilsKt.hashToMD5(dataBytes);
 		
 		Torrent.FileInfo.Builder fileInfo = Torrent.FileInfo
 				.newBuilder()
@@ -38,7 +38,7 @@ public class UploadRequest implements Handler {
 					.newBuilder()
 					.setIndex(j)
 					.setSize(chunk.length)
-					.setHash(Utils.hashToMD5(chunk))
+					.setHash(UtilsKt.hashToMD5(chunk))
 					.build();
 			
 			fileInfo.addChunks(j, chunkInfo);
