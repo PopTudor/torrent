@@ -1,6 +1,6 @@
 package com.company.proto.handlers
 
-import com.company.proto.Constants
+import com.company.proto.CHUNK_SIZE
 import com.company.proto.toChunkedArray
 import com.company.proto.toMD5Hash
 import com.company.proto.torrent.Torrent
@@ -19,7 +19,7 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 				.setHash(data.toMD5Hash())
 				.setSize(data.size())
 				.setFilename(filename)
-				.addAllChunks(data.toChunkedArray(Constants.CHUNK_SIZE))
+				.addAllChunks(data.toChunkedArray(CHUNK_SIZE))
 				.build()
 		
 		

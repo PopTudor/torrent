@@ -18,6 +18,8 @@ import java.util.stream.Stream
 import com.company.proto.UtilsIO.readMessageFrom
 import com.company.proto.UtilsIO.writeMessageTo
 
+val CHUNK_SIZE = 1024
+
 fun nodeList(): List<Torrent.Node> {
 	return IntStream.rangeClosed(5001, 5005)
 			.mapToObj { index ->

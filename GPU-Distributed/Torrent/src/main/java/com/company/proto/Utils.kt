@@ -37,7 +37,7 @@ fun Torrent.Message.messageLen(): Byte {
 
 fun String.isValidRegex(): Boolean {
 	return try {
-		if (isBlank()) throw PatternSyntaxException("Empty regex", this, 0)
+		if (isNullOrBlank()) throw PatternSyntaxException("Empty regex", this, 0)
 		Pattern.compile(this)
 		true
 	} catch (exception: PatternSyntaxException) {
@@ -75,7 +75,7 @@ fun ByteString.toChunkedArray(chunkSize: Int): Iterable<Torrent.ChunkInfo> {
 }
 
 fun ByteString.toChunkAt(chunkInfo: Torrent.ChunkInfo): ByteString? {
-	return this.chunked(Constants.CHUNK_SIZE)
+	return this.chunked(CHUNK_SIZE)
 			.map { it.toByteArray() }
 			.map { ByteString.copyFrom(it) }
 			.firstOrNull { it.toMD5Hash() == chunkInfo.hash }

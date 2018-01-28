@@ -15,7 +15,11 @@ import com.company.proto.UtilsIO.writeMessageTo
 import com.google.common.collect.Streams
 import jdk.nashorn.internal.objects.NativeArray.forEach
 
-class ReplicateHandler(private val storage: MutableMap<Torrent.FileInfo, ByteString>, private val duplicates: MutableList<Duplicate>, private val currentNode: Torrent.Node) : Handler {
+class ReplicateHandler(
+		private val storage: MutableMap<Torrent.FileInfo, ByteString>,
+		private val duplicates: MutableList<Duplicate>,
+		private val currentNode: Torrent.Node
+) : Handler {
 	
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val filename = message.replicateRequest.fileInfo.filename
@@ -96,10 +100,6 @@ class ReplicateHandler(private val storage: MutableMap<Torrent.FileInfo, ByteStr
 					.build()
 		}
 		return message.build()
-	}
-	
-	private fun nodeIsCurrent(node: Torrent.Node): Boolean {
-		return node.host == currentNode.host && node.port == currentNode.port
 	}
 	
 	private fun createChunkRequest(fileHash: ByteString, chunkIndex: Int): Torrent.Message {
