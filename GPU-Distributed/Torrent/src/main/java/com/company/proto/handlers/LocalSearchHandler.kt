@@ -12,13 +12,14 @@ class LocalSearchHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 		if (!regex.isValidRegex()) return messageError(regex)
 		
 		val filesInfo = storage.keys.filter { regex.toRegex().matches(it.filename) }
-		println("Files found $filesInfo")
 		if (filesInfo.isEmpty()) return successNoResult()
 		
 		return successWithResult(filesInfo)
 	}
 	
 	private fun successWithResult(fileInfo: List<Torrent.FileInfo>): Torrent.Message {
+		print("Local Search: ")
+		 fileInfo.forEach { print(it.hash.hashToReadableMD5()+" ") }
 		val localSearchResponse = Torrent.LocalSearchResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.addAllFileInfo(fileInfo)

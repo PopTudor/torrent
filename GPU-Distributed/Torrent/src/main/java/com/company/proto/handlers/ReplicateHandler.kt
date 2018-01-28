@@ -1,19 +1,17 @@
 package com.company.proto.handlers
 
-import com.company.proto.*
+import com.company.proto.UtilsIO.readMessageFrom
+import com.company.proto.UtilsIO.writeMessageTo
+import com.company.proto.hashToReadableMD5
+import com.company.proto.nodeObservable
+import com.company.proto.toMD5Hash
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
-
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 import java.net.ConnectException
 import java.net.Socket
-
-import com.company.proto.UtilsIO.readMessageFrom
-import com.company.proto.UtilsIO.writeMessageTo
-import com.google.common.collect.Streams
-import jdk.nashorn.internal.objects.NativeArray.forEach
 
 class ReplicateHandler(
 		private val storage: MutableMap<Torrent.FileInfo, ByteString>,
@@ -45,6 +43,7 @@ class ReplicateHandler(
 	}
 	
 	private fun replicate(fileinfo: Torrent.FileInfo): Torrent.Message {
+		println("Replicate: ${fileinfo.hash.hashToReadableMD5()}")
 		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
 		val message = Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
@@ -114,6 +113,7 @@ class ReplicateHandler(
 	}
 	
 	private fun successFileReplicated(chunkRequest: Torrent.ChunkRequest): Torrent.Message {
+		println("File replicated for ${chunkRequest.fileHash.hashToReadableMD5()}")
 		val nodeReplicationStatus = Torrent.NodeReplicationStatus.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.setNode(currentNode)

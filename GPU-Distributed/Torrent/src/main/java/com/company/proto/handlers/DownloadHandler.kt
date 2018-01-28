@@ -3,7 +3,6 @@ package com.company.proto.handlers
 import com.company.proto.hashToReadableMD5
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
-import sun.security.krb5.KrbException.errorMessage
 
 class DownloadHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : Handler {
 	override fun handle(message: Torrent.Message): Torrent.Message {
@@ -20,7 +19,7 @@ class DownloadHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : 
 	}
 	
 	private fun successFileFound(fileKey: Torrent.FileInfo): Torrent.Message {
-		println("Actual: $fileKey")
+		println("Actual: ${fileKey.hash.hashToReadableMD5()}")
 		val downloadResponse = Torrent.DownloadResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.setErrorMessage(Torrent.Status.SUCCESS.toString())
@@ -33,7 +32,7 @@ class DownloadHandler(private val storage: Map<Torrent.FileInfo, ByteString>) : 
 	}
 	
 	private fun unableToComplete(filehash: ByteString): Torrent.Message {
-		println("Download: unable to complete $filehash not found")
+		println("Requested hash ${filehash.hashToReadableMD5()} not found")
 		val build = Torrent.DownloadResponse.newBuilder()
 				.setStatus(Torrent.Status.UNABLE_TO_COMPLETE)
 				.setErrorMessage("File with hash: $filehash not found")

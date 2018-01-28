@@ -5,8 +5,9 @@ import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
 
 
-class ChunkHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
-	: Handler {
+class ChunkHandler(
+		private val storage: Map<Torrent.FileInfo, ByteString>
+) : Handler {
 	
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val hash = message.chunkRequest.fileHash
@@ -14,7 +15,7 @@ class ChunkHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 		
 		if (hash.size() != 16 || chunkIndex < 0) return messageError()
 		// if don't have file, return error
-		val fileInfo = storage.keys.find { it.hash == hash } ?: return unableToComplete()
+		val fileInfo = storage.keys.find { it.hash == hash } ?: return unableToComplete(hash)
 		
 		val bytes = storage[fileInfo] ?: return processingError()
 		return chunkResponse(bytes, fileInfo.getChunks(chunkIndex))
@@ -22,7 +23,7 @@ class ChunkHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 	
 	private fun chunkResponse(bytes: ByteString, chunkInfo: Torrent.ChunkInfo): Torrent.Message {
 		val data = bytes.toChunkAt(chunkInfo) ?: return processingError()
-		println("chunk response $chunkInfo $data")
+		println("Chunk found: $chunkInfo")
 		val build = Torrent.ChunkResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.setData(data)
@@ -59,10 +60,11 @@ class ChunkHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 				.build()
 	}
 	
-	private fun unableToComplete(): Torrent.Message {
+	private fun unableToComplete(hash: ByteString): Torrent.Message {
+		println("Missing chunk for file hash ${hash.hashToReadableMD5()}")
 		val build = Torrent.ChunkResponse.newBuilder()
 				.setStatus(Torrent.Status.UNABLE_TO_COMPLETE)
-				.setErrorMessage("UNABLE_TO_COMPLETE")
+				.setErrorMessage(hash.hashToReadableMD5())
 				.setData(ByteString.EMPTY)
 				.build()
 		return Torrent.Message.newBuilder()

@@ -1,6 +1,7 @@
 package com.company.proto.handlers
 
 import com.company.proto.CHUNK_SIZE
+import com.company.proto.hashToReadableMD5
 import com.company.proto.toChunkedArray
 import com.company.proto.toMD5Hash
 import com.company.proto.torrent.Torrent
@@ -21,10 +22,7 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 				.setFilename(filename)
 				.addAllChunks(data.toChunkedArray(CHUNK_SIZE))
 				.build()
-		
-		
 		storage[fileInfo] = data
-		println("Upload file $fileInfo")
 		return successFileUploadResponse(fileInfo)
 	}
 	
@@ -40,6 +38,7 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 	}
 	
 	private fun successFileUploadResponse(fileInfo: Torrent.FileInfo): Torrent.Message {
+		println("Upload file ${fileInfo.hash.hashToReadableMD5()}")
 		val uploadResponse = Torrent.UploadResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.setFileInfo(fileInfo)
