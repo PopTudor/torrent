@@ -24,8 +24,8 @@ public class Server {
 				.setPort(port)
 				.build();
 		InetAddress inetAddress = InetAddress.getByName(node.getHost());
-		while (true) {
-			try (ServerSocket listener = new ServerSocket(node.getPort(), 0, inetAddress)) {
+		try (ServerSocket listener = new ServerSocket(node.getPort(), 0, inetAddress)) {
+			while (true) {
 				System.out.printf("Listening on: %s:%d\n", listener.getLocalSocketAddress(), listener.getLocalPort());
 				try (Socket socket = listener.accept()) {
 					DataInputStream input = new DataInputStream(socket.getInputStream());
@@ -40,9 +40,7 @@ public class Server {
 					
 					input.close();
 					output.close();
-					socket.close();
 				}
-				listener.close();
 			}
 		}
 	}

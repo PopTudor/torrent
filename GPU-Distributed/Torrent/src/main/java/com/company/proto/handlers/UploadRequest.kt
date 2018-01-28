@@ -1,6 +1,7 @@
 package com.company.proto.handlers
 
 import com.company.proto.Constants
+import com.company.proto.toChunkedArray
 import com.company.proto.toMD5Hash
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
@@ -16,12 +17,13 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 				.setHash(data.toMD5Hash())
 				.setSize(data.size())
 				.setFilename(filename)
-				.addAllChunks(chunkArray(data.toByteArray(), Constants.CHUNK_SIZE))
+				.addAllChunks(data.toChunkedArray(Constants.CHUNK_SIZE))
 				.build()
 		
 		if (filename.isNullOrBlank()) return errorFilenameEmptyResponse(fileInfo)
 		
 		storage[fileInfo] = data
+		println("Upload file $fileInfo")
 		return successFileUploadResponse(fileInfo)
 	}
 	
@@ -61,52 +63,4 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 				.build()
 	}
 	
-}
-
-fun chunkArray(array: ByteArray, chunkSize: Int): List<Torrent.ChunkInfo> {
-	val numOfChunks = Math.ceil(array.size.toDouble() / chunkSize).toInt()
-	val chunksInfo = mutableListOf<Torrent.ChunkInfo>()
-	var j = 0
-	for (i in 0 until numOfChunks) {
-		val start = i * chunkSize
-		val length = Math.min(array.size - start, chunkSize)
-		
-		val temp = ByteArray(length)
-		System.arraycopy(array, start, temp, 0, length)
-		
-		val chunkInfo = Torrent.ChunkInfo
-				.newBuilder()
-				.setIndex(j)
-				.setSize(temp.size)
-				.setHash(temp.toMD5Hash())
-				.build()
-		chunksInfo.add(chunkInfo)
-		j++
-	}
-	return chunksInfo
-}
-
-fun chunkAtIntex(array: ByteArray, chunkSize: Int, chunkInfo: Torrent.ChunkInfo): ByteArray {
-	val numOfChunks = Math.ceil(array.size.toDouble() / chunkSize).toInt()
-	var j = 0
-	for (i in 0 until numOfChunks) {
-		val start = i * chunkSize
-		val length = Math.min(array.size - start, chunkSize)
-		
-		val temp = ByteArray(length)
-		System.arraycopy(array, start, temp, 0, length)
-		
-		val chunkInfotmp = Torrent.ChunkInfo
-				.newBuilder()
-				.setIndex(j)
-				.setSize(temp.size)
-				.setHash(temp.toMD5Hash())
-				.build()
-		if (chunkInfotmp == chunkInfo)
-			return temp
-		if (j == chunkInfo.index)
-			break
-		j++
-	}
-	return ByteArray(0)
 }

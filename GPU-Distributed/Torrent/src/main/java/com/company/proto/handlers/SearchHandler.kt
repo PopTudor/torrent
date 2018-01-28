@@ -16,11 +16,7 @@ import com.company.proto.UtilsIO.readMessageFrom
 import com.company.proto.UtilsIO.writeMessageTo
 
 class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val currentNode: Torrent.Node) : Handler {
-	private val localSearchHandler: LocalSearchHandler
-	
-	init {
-		this.localSearchHandler = LocalSearchHandler(storage)
-	}
+	private val localSearchHandler: LocalSearchHandler = LocalSearchHandler(storage)
 	
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val regex = message.searchRequest.regex
@@ -117,7 +113,7 @@ class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val curr
 				.newBuilder()
 				.setNode(currentNode)
 				.setStatus(Torrent.Status.MESSAGE_ERROR)
-				.setErrorMessage("MESSAGE_ERROR")
+				.setErrorMessage("Regex $filename is invalid")
 				.addFiles(fileInfo)
 				.build()
 		val searchResponse = Torrent.SearchResponse

@@ -10,6 +10,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.ArrayList
 import java.util.Arrays
+import java.util.function.Predicate
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
@@ -49,26 +50,24 @@ fun ByteArray.toMD5Hash(): ByteString {
 
 fun ByteString.toMD5Hash() = this.toByteArray().toMD5Hash()
 
-fun ByteString.toList(): Iterable<Torrent.ChunkInfo> {
-	return this.toByteArray().toList()
-}
-
-fun ByteArray.toList(): Iterable<Torrent.ChunkInfo> {
-	val chunkInfos = ArrayList<Torrent.ChunkInfo>()
-	var i = 0
-	var index = 0
-	while (i < this.size) {
-		val chunk = Arrays.copyOfRange(this, i, Math.min(this.size, i + Constants.CHUNK_SIZE))
-		
+fun ByteString.toChunkedArray(chunkSize: Int): Iterable<Torrent.ChunkInfo> {
+	val chunksInfo = mutableListOf<Torrent.ChunkInfo>()
+	this.chunked(chunkSize).forEachIndexed { index, list ->
+		val array = list.toByteArray()
 		val chunkInfo = Torrent.ChunkInfo
 				.newBuilder()
 				.setIndex(index)
-				.setSize(chunk.size)
-				.setHash(chunk.toMD5Hash())
+				.setSize(array.size)
+				.setHash(array.toMD5Hash())
 				.build()
-		chunkInfos.add(chunkInfo)
-		i += Constants.CHUNK_SIZE
-		index++
+		chunksInfo.add(chunkInfo)
 	}
-	return chunkInfos
+	return chunksInfo
+}
+
+fun ByteString.toChunkAt(chunkInfo: Torrent.ChunkInfo): ByteString? {
+	return this.chunked(Constants.CHUNK_SIZE)
+			.map { it.toByteArray() }
+			.map { ByteString.copyFrom(it) }
+			.firstOrNull { it.toMD5Hash() == chunkInfo.hash }
 }
