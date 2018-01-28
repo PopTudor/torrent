@@ -13,6 +13,8 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 		val filename = message.uploadRequest.filename
 		val data = message.uploadRequest.data
 		
+		if (filename.isNullOrBlank()) return errorFilenameEmptyResponse()
+		
 		val fileInfo = Torrent.FileInfo.newBuilder()
 				.setHash(data.toMD5Hash())
 				.setSize(data.size())
@@ -20,19 +22,16 @@ class UploadRequest(private var storage: MutableMap<Torrent.FileInfo, ByteString
 				.addAllChunks(data.toChunkedArray(Constants.CHUNK_SIZE))
 				.build()
 		
-		if (filename.isNullOrBlank()) return errorFilenameEmptyResponse(fileInfo)
 		
 		storage[fileInfo] = data
 		println("Upload file $fileInfo")
 		return successFileUploadResponse(fileInfo)
 	}
 	
-	private fun errorFilenameEmptyResponse(fileInfo: Torrent.FileInfo): Torrent.Message {
-		val uploadResponse = Torrent.UploadResponse
-				.newBuilder()
+	private fun errorFilenameEmptyResponse(): Torrent.Message {
+		val uploadResponse = Torrent.UploadResponse.newBuilder()
 				.setStatus(Torrent.Status.MESSAGE_ERROR)
-				.setErrorMessage("Filename must not be empty")
-				.setFileInfo(fileInfo)
+				.setErrorMessage("Filename is empty")
 				.build()
 		return Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.UPLOAD_RESPONSE)

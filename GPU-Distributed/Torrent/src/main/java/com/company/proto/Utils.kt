@@ -8,11 +8,13 @@ import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.security.MessageDigest
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.function.Predicate
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
+import javax.xml.bind.DatatypeConverter
 
 
 fun writeLittleEndian(stream: OutputStreamWriter, bytes: ByteArray) {
@@ -44,11 +46,18 @@ fun String.isValidRegex(): Boolean {
 }
 
 fun ByteArray.toMD5Hash(): ByteString {
-	val hashCode = Hashing.md5().hashBytes(this)
-	return ByteString.copyFrom(hashCode.asBytes())
+	val md = MessageDigest.getInstance("MD5")
+	val digested = md.digest(this)
+	return ByteString.copyFrom(digested)
 }
 
-fun ByteString.toMD5Hash() = this.toByteArray().toMD5Hash()
+fun ByteString.toMD5Hash(): ByteString {
+	return this.toByteArray().toMD5Hash()
+}
+
+fun ByteString.hashToReadableMD5():String{
+	return DatatypeConverter.printHexBinary(this.toByteArray())
+}
 
 fun ByteString.toChunkedArray(chunkSize: Int): Iterable<Torrent.ChunkInfo> {
 	val chunksInfo = mutableListOf<Torrent.ChunkInfo>()

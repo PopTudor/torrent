@@ -3,7 +3,6 @@ package com.company.proto.handlers
 import com.company.proto.*
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
-import org.apache.commons.lang.StringUtils
 
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -13,26 +12,27 @@ import java.net.Socket
 
 import com.company.proto.UtilsIO.readMessageFrom
 import com.company.proto.UtilsIO.writeMessageTo
+import com.google.common.collect.Streams
+import jdk.nashorn.internal.objects.NativeArray.forEach
 
-class ReplicateHandler(private val storage: Map<Torrent.FileInfo, ByteString>, private val duplicates: MutableList<Duplicate>, private val currentNode: Torrent.Node) : Handler {
+class ReplicateHandler(private val storage: MutableMap<Torrent.FileInfo, ByteString>, private val duplicates: MutableList<Duplicate>, private val currentNode: Torrent.Node) : Handler {
 	
 	override fun handle(message: Torrent.Message): Torrent.Message {
 		val filename = message.replicateRequest.fileInfo.filename
 		val hash = message.replicateRequest.fileInfo.hash
-		val chunkInfos = message.replicateRequest.fileInfo.chunksList
-		if (StringUtils.isEmpty(filename)) return messageError()
+		if (filename.isNullOrBlank()) return messageError()
 		
-		storage.forEach { fileInfo, bytes ->
-			if (fileInfo.hash == hash)
-				duplicates.add(Duplicate(filename, bytes))
-		}
-		duplicates.find { duplicate -> duplicate.filename == filename } ?: return replicate(hash, chunkInfos)
+		val fileInfoDup = storage.keys.find { it.hash == hash } ?: return replicate(message.replicateRequest.fileInfo)
+		
+		duplicates.add(Duplicate(filename, storage[fileInfoDup]))
+		
 		return successFileReplicated(message.chunkRequest)
 	}
 	
 	private fun messageError(): Torrent.Message {
 		val build = Torrent.ReplicateResponse.newBuilder()
-				.setErrorMessage("MESSAGE_ERROR")
+				.setStatus(Torrent.Status.MESSAGE_ERROR)
+				.setErrorMessage("The filename is empty")
 				.build()
 		return Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
@@ -40,52 +40,61 @@ class ReplicateHandler(private val storage: Map<Torrent.FileInfo, ByteString>, p
 				.build()
 	}
 	
-	private fun replicate(fileHash: ByteString, chunkInfos: List<Torrent.ChunkInfo>): Torrent.Message {
+	private fun replicate(fileinfo: Torrent.FileInfo): Torrent.Message {
 		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
 		val message = Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
-		chunkInfos.forEach { chunkInfo ->
+		val chunkData = mutableMapOf<Torrent.ChunkInfo, ByteString>()
+		fileinfo.chunksList.forEach { chunkInfo ->
 			nodeObservable(currentNode).forEach { node ->
-				// foreach node
-				try {
-					Socket(node.host, node.port).use { socket ->
+				Socket(node.host, node.port).use { socket ->
+					try {
 						val output = DataOutputStream(socket.getOutputStream())
 						val input = DataInputStream(socket.getInputStream())
 						
-						val reqMessage = createChunkRequest(fileHash, chunkInfo.index)
+						val reqMessage = createChunkRequest(fileinfo.hash, chunkInfo.index)
 						writeMessageTo(reqMessage, output)
 						
 						val resMessage = readMessageFrom(input)
 						val chunkResponse = resMessage.chunkResponse
-						
-						val replicationStatus = Torrent.NodeReplicationStatus
-								.newBuilder()
+						val chunkInfoResponse = Torrent.ChunkInfo.newBuilder()
+								.setHash(chunkResponse.data.toMD5Hash())
+								.setIndex(chunkInfo.index)
+								.setSize(chunkResponse.data.size())
+								.build()
+						chunkData[chunkInfoResponse] = chunkResponse.data
+						val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
 								.setNode(node)
 								.setChunkIndex(chunkInfo.index)
 								.setStatus(chunkResponse.status)
-								.build()
-						replicateResponse.addNodeStatusList(replicationStatus)
+						replicateResponse.addNodeStatusList(replicationStatus.build())
+					} catch (error: IOException) {
+						val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+								.setNode(node)
+								.setChunkIndex(chunkInfo.index)
+						if (error is ConnectException) {
+							replicateResponse.errorMessage = "NETWORK_ERROR"
+							replicationStatus.status = Torrent.Status.NETWORK_ERROR
+						} else {
+							replicationStatus.status = Torrent.Status.PROCESSING_ERROR
+							replicateResponse.errorMessage = "PROCESSING_ERROR"
+						}
+						replicateResponse.addNodeStatusList(replicationStatus.build())
+						error.printStackTrace()
 					}
-				} catch (error: IOException) {
-					val replicationStatus = Torrent.NodeReplicationStatus
-							.newBuilder()
-							.setNode(node)
-							.setChunkIndex(chunkInfo.index)
-					if (error is ConnectException) {
-						replicateResponse.errorMessage = "NETWORK_ERROR"
-						replicationStatus.status = Torrent.Status.NETWORK_ERROR
-					} else {
-						replicationStatus.status = Torrent.Status.PROCESSING_ERROR
-						replicateResponse.errorMessage = "PROCESSING_ERROR"
-					}
-					replicateResponse.addNodeStatusList(replicationStatus.build())
-					error.printStackTrace()
 				}
-				
 			}
 		}
-		
-		message.replicateResponse = replicateResponse.build()
+		val finalData = ByteString.copyFrom(chunkData.values)
+		if (finalData.toMD5Hash() == fileinfo.hash) {
+			storage[fileinfo] = finalData
+			message.replicateResponse = replicateResponse.build()
+		} else {
+			message.replicateResponse = Torrent.ReplicateResponse.newBuilder()
+					.setStatus(Torrent.Status.PROCESSING_ERROR)
+					.setErrorMessage("The received chunks do not add up to file size")
+					.build()
+		}
 		return message.build()
 	}
 	
@@ -105,15 +114,12 @@ class ReplicateHandler(private val storage: Map<Torrent.FileInfo, ByteString>, p
 	}
 	
 	private fun successFileReplicated(chunkRequest: Torrent.ChunkRequest): Torrent.Message {
-		val nodeReplicationStatus = Torrent.NodeReplicationStatus
-				.newBuilder()
+		val nodeReplicationStatus = Torrent.NodeReplicationStatus.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.setNode(currentNode)
 				.setChunkIndex(chunkRequest.chunkIndex)
-				.setErrorMessage("SUCCESS")
 				.build()
 		val build = Torrent.ReplicateResponse.newBuilder()
-				.setErrorMessage("SUCCESS")
 				.addNodeStatusList(nodeReplicationStatus)
 				.setStatus(Torrent.Status.SUCCESS)
 				.build()
@@ -122,5 +128,4 @@ class ReplicateHandler(private val storage: Map<Torrent.FileInfo, ByteString>, p
 				.setReplicateResponse(build)
 				.build()
 	}
-	
 }

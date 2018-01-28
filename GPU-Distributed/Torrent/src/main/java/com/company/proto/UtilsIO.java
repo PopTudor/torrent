@@ -10,9 +10,9 @@ public class UtilsIO {
 	public static Torrent.Message readMessageFrom(DataInputStream inputStream) throws IOException {
 		int len = inputStream.readInt();
 		byte[] data = new byte[len];
-		inputStream.readFully(data, 0, len);
-		Torrent.Message message = Torrent.Message.parseFrom(data);
-		return message;
+		int readLen = inputStream.read(data, 0, len);
+		if (readLen == -1) throw new IOException("error");
+		return Torrent.Message.parseFrom(data);
 	}
 	
 	public static void writeMessageTo(Torrent.Message response, DataOutputStream output) throws IOException {
