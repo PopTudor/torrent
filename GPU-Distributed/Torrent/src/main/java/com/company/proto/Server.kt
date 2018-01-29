@@ -24,14 +24,14 @@ constructor(host: String, port: Int) {
 				println("Listening on: ${listener.localSocketAddress}:${listener.localPort}")
 				listener.accept().use { socket ->
 					// ..... open .....
-					val input = DataInputStream(socket.getInputStream())
+					val input = socket.getDataInputStream()
 					// ..... receive .....
 					val message = input.readMessage()
 					// ..... process .....
 					val handler = HandlerFactory.create(message, node)
 					val response = handler.handle(message)
 					// ..... respond ......
-					val output = DataOutputStream(socket.getOutputStream())
+					val output = socket.getDataOutputStream()
 					output.writeMessage(response)
 					
 					input.close()

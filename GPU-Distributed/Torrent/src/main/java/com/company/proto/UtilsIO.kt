@@ -5,6 +5,7 @@ import com.company.proto.torrent.Torrent
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import java.net.Socket
 
 @Throws(IOException::class)
 fun DataInputStream.readMessage(): Torrent.Message {
@@ -28,3 +29,8 @@ fun loop(function: () -> Unit) {
 	while (true)
 		function()
 }
+
+fun Socket.getDataOutputStream() = DataOutputStream(getOutputStream())
+fun Socket.getDataInputStream() = DataInputStream(getInputStream())
+
+
