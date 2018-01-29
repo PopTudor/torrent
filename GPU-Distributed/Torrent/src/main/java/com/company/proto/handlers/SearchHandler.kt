@@ -10,8 +10,6 @@ import java.io.IOException
 import java.net.ConnectException
 import java.net.Socket
 
-import com.company.proto.UtilsIO.readMessageFrom
-import com.company.proto.UtilsIO.writeMessageTo
 
 class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val currentNode: Torrent.Node) : Handler {
 	private val localSearchHandler: LocalSearchHandler = LocalSearchHandler(storage)
@@ -54,9 +52,9 @@ class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val curr
 					val input = DataInputStream(socket.getInputStream())
 					
 					val reqMessage = createLocalSearchRequest(regex)
-					writeMessageTo(reqMessage, output)
+					output.writeMessage(reqMessage)
 					
-					val resMessage = readMessageFrom(input)
+					val resMessage = input.readMessage()
 					val localSearchResponse = resMessage.localSearchResponse
 					
 					val nodeSearchResult = Torrent.NodeSearchResult.newBuilder()

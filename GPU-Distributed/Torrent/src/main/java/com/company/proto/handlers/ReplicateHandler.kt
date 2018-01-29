@@ -1,10 +1,6 @@
 package com.company.proto.handlers
 
-import com.company.proto.UtilsIO.readMessageFrom
-import com.company.proto.UtilsIO.writeMessageTo
-import com.company.proto.hashToReadableMD5
-import com.company.proto.nodeObservable
-import com.company.proto.toMD5Hash
+import com.company.proto.*
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
 import java.io.DataInputStream
@@ -56,9 +52,9 @@ class ReplicateHandler(
 						val input = DataInputStream(socket.getInputStream())
 						
 						val reqMessage = createChunkRequest(fileinfo.hash, chunkInfo.index)
-						writeMessageTo(reqMessage, output)
+						output.writeMessage(reqMessage)
 						
-						val resMessage = readMessageFrom(input)
+						val resMessage = input.readMessage()
 						val chunkResponse = resMessage.chunkResponse
 						val chunkInfoResponse = Torrent.ChunkInfo.newBuilder()
 								.setHash(chunkResponse.data.toMD5Hash())

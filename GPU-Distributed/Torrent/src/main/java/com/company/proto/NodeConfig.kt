@@ -15,8 +15,6 @@ import java.util.stream.Collectors
 import java.util.stream.IntStream
 import java.util.stream.Stream
 
-import com.company.proto.UtilsIO.readMessageFrom
-import com.company.proto.UtilsIO.writeMessageTo
 
 val CHUNK_SIZE = 1024
 
