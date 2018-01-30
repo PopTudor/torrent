@@ -1,24 +1,19 @@
 package hello
 
-import hello.data.account.AccountRepository
-import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestParam
+import hello.data.Deposit
+import hello.data.DepositStatus
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-class GreetingController(val accountManagementService: AccountManagementService, val accountRepository: AccountRepository) {
+class GreetingController(private val accountManagementService: AccountManagementService) {
 	
-	
-	@GetMapping("/deposit")
-	fun deposit(
-			@RequestParam(value = "deposit", defaultValue = "0") deposit: Double,
-			@RequestParam(value = "user") user: String
-	): ResponseEntity<String> {
-		if (deposit <= 0) return ResponseEntity.ok("$deposit was added to your account")
+	@PostMapping("/deposit")
+	fun deposit(@RequestBody deposit: Deposit): DepositStatus {
+		if (deposit.deposit <= 0) return DepositStatus(0.0, "$deposit was added to your user")
 		
-		val response = accountManagementService.deposit(deposit, user)
-		return ResponseEntity.ok(response.toString())
+		return accountManagementService.deposit(deposit.deposit, deposit.user)
 	}
 }

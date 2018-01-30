@@ -13,23 +13,24 @@ class TwoPhaseScheduler(
 	private val transactions = mutableListOf<Transaction>()
 	
 	@Synchronized
-	fun readLock(transaction: Transaction, resource: Any) {
-		runBlocking {
+	fun readLock(transaction: Transaction, resource: Any) = runBlocking {
 			val table = resource.javaClass.simpleName
-			if (locksTable.isUnlocked(transaction, table, resource)) {
-				val lock = Lock(LockType.READ, resource, table, transaction)
-				locksTable.lock(lock, resource)
-				lock.readLock().lock()
-			} else if (locksTable.hasReadLock(transaction, table, resource)) {
-				locksTable.getLock(resource).readLock().lock()
-			} else {
-				val waitingForReadLock = launch {
-					while (locksTable.isLocked(transaction, table, resource))
-						delay(5, TimeUnit.MILLISECONDS)
+			when {
+				locksTable.isUnlocked(transaction, table, resource) -> {
+					val lock = Lock(LockType.READ, resource, table, transaction)
+					locksTable.lock(lock, resource)
+					lock.readLock().lock()
 				}
-				waitingForReadLock.join()
+				locksTable.hasReadLock(transaction, table, resource) -> locksTable.getLock(resource).readLock().lock()
+				else -> {
+					val waitingForReadLock = launch {
+						while (locksTable.isLocked(transaction, table, resource))
+							delay(5, TimeUnit.MILLISECONDS)
+					}
+					waitingForReadLock.join()
+				}
 			}
-		}
+		
 	}
 	
 	fun writeLock(it: Transaction, user: String): WaitForData {

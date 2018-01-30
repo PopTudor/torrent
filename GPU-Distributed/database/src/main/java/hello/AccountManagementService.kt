@@ -52,6 +52,6 @@ class AccountManagementService(
 	}
 	
 	private fun retrieveUser(user: String): Account? {
-		return accountRepository.findByName(user).first()
+		return accountRepository.findByName(user).firstOrNull()
 	}
 }

@@ -40,6 +40,11 @@ jar {
 repositories {
 	mavenCentral()
 }
+allprojects {
+	repositories {
+		maven { url 'https://jitpack.io' }
+	}
+}
 
 dependencies {
 	compile("org.springframework.boot:spring-boot-starter-web")
@@ -56,6 +61,7 @@ dependencies {
 	compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22'
 	compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.22'
 	compile 'com.squareup.retrofit2:retrofit:2.3.0'
+	compile('com.github.ihsanbal:LoggingInterceptor:2.0.4')
 	// https://mvnrepository.com/artifact/com.squareup.retrofit2/adapter-rxjava2
 	compile group: 'com.squareup.retrofit2', name: 'adapter-rxjava2', version: '2.3.0'
 	// https://mvnrepository.com/artifact/com.squareup.retrofit2/converter-gson
