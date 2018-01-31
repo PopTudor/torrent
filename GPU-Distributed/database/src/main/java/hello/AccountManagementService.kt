@@ -23,13 +23,17 @@ class AccountManagementService(
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.schedule(transaction)
 		
-		twoPhaseScheduler.readLock(transaction, user)
-		var account = retrieveUser(user) ?: return DepositStatus(0.0, "User not found")
+		val readLock = twoPhaseScheduler.readLock(transaction, user)
+		var account = retrieveUser(user)
+		if (account == null) {
+			twoPhaseScheduler.release(readLock)
+			return DepositStatus(0.0, "User not found")
+		}
+		
 		account.balance += deposit
-
-//		twoPhaseScheduler.writeLock(transaction, user)
-//
-//		saveAccount(account)
+		
+		twoPhaseScheduler.writeLock(transaction, account)
+		saveAccount(account)
 //		updateAccountHistory(account)
 //
 		account = retrieveUser(user) ?: return DepositStatus(0.0, "User not found")
@@ -48,7 +52,6 @@ class AccountManagementService(
 	
 	private fun saveAccount(account: Account) {
 		accountRepository.save(account)
-		
 	}
 	
 	private fun retrieveUser(user: String): Account? {

@@ -4,32 +4,42 @@ import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class LocksTable(
-) {
-	private val locks = Collections.synchronizedMap(mutableMapOf<Any, Lock>())
+class LocksTable {
+	private val locks = Collections.synchronizedMap(mutableMapOf<Transaction, Lock>())
 	
-	fun getLock(resource: Any) = locks.getValue(resource)
+	operator fun get(lock: Lock): Lock = locks[lock.transaction]!!
 	
-	fun isUnlocked(transaction: Transaction, table: String, resource: Any) = !isLocked(transaction, table, resource)
-	
-	fun isLocked(transaction: Transaction, table: String, resource: Any): Boolean {
-		if (locks.containsKey(resource)) {
-			val lock = locks[resource] ?: return false
-			return lock.transaction == transaction && lock.table == table
+	@Synchronized
+	fun isLocked(lock: Lock): Boolean {
+		if (lock.transaction in locks) {
+			val lockedTransaction = locks[lock.transaction] ?: return false
+			return lockedTransaction == lock
 		}
 		return false
 	}
 	
-	fun lock(lock: Lock, resource: Any) {
-		locks[resource] = lock
+	fun isUnlocked(lock: Lock) = !isLocked(lock)
+	
+	@Synchronized
+	fun lock(lock: Lock): Lock {
+		locks[lock.transaction] = lock
+		lock.readLock().lock()
+		return lock
 	}
 	
-	fun hasReadLock(transaction: Transaction, table: String?, resource: Any): Boolean {
-		if (locks.containsKey(resource)) {
-			val lock = locks[resource] ?: return false
-			return lock.transaction == transaction && lock.table == table && lock.type == LockType.READ
+	@Synchronized
+	fun hasReadLock(lock: Lock): Boolean {
+		if (lock.transaction in locks) {
+			val lockedTransaction = locks[lock.resource] ?: return false
+			return lockedTransaction == lock
 		}
 		return false
+	}
+	
+	operator fun minusAssign(lock: Lock) {
+		if (lock.isWriteLocked) lock.writeLock().unlock()
+		lock.readLock().unlock()
+		locks.remove(lock.transaction)
 	}
 	
 }

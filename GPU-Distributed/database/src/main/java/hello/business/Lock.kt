@@ -4,7 +4,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 
 data class Lock(
 		val type: LockType,
-		val record: Any,
+		val resource: Any,
 		val table: String,
 		val transaction: Transaction
 ) : ReentrantReadWriteLock() {

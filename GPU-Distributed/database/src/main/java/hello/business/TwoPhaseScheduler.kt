@@ -1,44 +1,40 @@
 package hello.business
 
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
 import org.springframework.stereotype.Service
-import java.util.concurrent.TimeUnit
 
 @Service
 class TwoPhaseScheduler(
-		private val locksTable: LocksTable
+		private val locksTable: LocksTable,
+		private val transactionTable: TransactionsTable
 ) {
-	private val transactions = mutableListOf<Transaction>()
 	
 	@Synchronized
-	fun readLock(transaction: Transaction, resource: Any) = runBlocking {
-			val table = resource.javaClass.simpleName
-			when {
-				locksTable.isUnlocked(transaction, table, resource) -> {
-					val lock = Lock(LockType.READ, resource, table, transaction)
-					locksTable.lock(lock, resource)
-					lock.readLock().lock()
-				}
-				locksTable.hasReadLock(transaction, table, resource) -> locksTable.getLock(resource).readLock().lock()
-				else -> {
-					val waitingForReadLock = launch {
-						while (locksTable.isLocked(transaction, table, resource))
-							delay(5, TimeUnit.MILLISECONDS)
-					}
-					waitingForReadLock.join()
-				}
-			}
-		
+	fun readLock(transaction: Transaction, resource: Any): Lock {
+		val table = resource.javaClass.simpleName
+		val lock = Lock(LockType.READ, resource, table, transaction)
+		return when {
+			locksTable.isUnlocked(lock) -> locksTable.lock(lock)
+			locksTable.hasReadLock(lock) -> locksTable[lock]
+			else -> lock
+		}
 	}
 	
-	fun writeLock(it: Transaction, user: String): WaitForData {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	fun writeLock(transaction: Transaction, resource: Any): WaitForData {
+		val table = resource.javaClass.simpleName
+		val lock = Lock(LockType.READ, resource, table, transaction)
+		when {
+			locksTable.isUnlocked(lock) -> locksTable.lock(lock)
+			else -> TODO("wait for unlock")
+		}
 	}
 	
 	fun schedule(transaction: Transaction) {
-		transactions += transaction
+		transactionTable += transaction
+	}
+	
+	fun release(lock: Lock) {
+		transactionTable -= lock.transaction
+		locksTable -= lock
 	}
 	
 }
