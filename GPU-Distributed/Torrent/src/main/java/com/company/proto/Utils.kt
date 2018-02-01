@@ -77,6 +77,8 @@ fun ByteString.toChunkedArray(chunkSize: Int): Iterable<Torrent.ChunkInfo> {
 fun ByteString.toChunkAt(chunkInfo: Torrent.ChunkInfo): ByteString? {
 	return this.chunked(CHUNK_SIZE)
 			.map { it.toByteArray() }
-			.map { ByteString.copyFrom(it) }
+			.map { it.toByteString() }
 			.firstOrNull { it.toMD5Hash() == chunkInfo.hash }
 }
+
+fun ByteArray.toByteString() = ByteString.copyFrom(this)

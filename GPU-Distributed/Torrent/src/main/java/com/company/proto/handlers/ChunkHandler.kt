@@ -22,7 +22,7 @@ class ChunkHandler(
 	}
 	
 	private fun chunkResponse(chunkInfo: Torrent.ChunkInfo, bytes: ByteString): Torrent.Message {
-		val data = bytes.toChunkAt(chunkInfo) ?: return processingError()
+		val data = bytes.toChunkAt(chunkInfo)
 		println("Chunk found: $chunkInfo")
 		val build = Torrent.ChunkResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)

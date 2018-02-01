@@ -3,6 +3,7 @@ package com.company.proto.handlers
 import com.company.proto.*
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
+import kotlinx.coroutines.experimental.delay
 
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -72,11 +73,9 @@ class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val curr
 				if (error is ConnectException) {
 					nodeSearchResult.status = Torrent.Status.NETWORK_ERROR
 					nodeSearchResult.errorMessage = "NETWORK_ERROR"
-					searchResponse.status = Torrent.Status.NETWORK_ERROR
 				} else {
 					nodeSearchResult.status = Torrent.Status.PROCESSING_ERROR
 					nodeSearchResult.errorMessage = "PROCESSING_ERROR"
-					searchResponse.status = Torrent.Status.PROCESSING_ERROR
 				}
 				searchResponse.addResults(nodeSearchResult.build())
 			}

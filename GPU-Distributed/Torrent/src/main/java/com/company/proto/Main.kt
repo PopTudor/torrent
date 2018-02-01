@@ -25,7 +25,7 @@ fun main(args: Array<String>) {
 //			}, {})
 	val node = Torrent.Node.newBuilder()
 			.setHost("127.0.0.1")
-			.setPort(5003).build()
+			.setPort(5004).build()
 
 	val server = Server(node)
 }

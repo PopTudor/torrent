@@ -17,7 +17,7 @@ constructor(node: Torrent.Node) {
 		val inetAddress = InetAddress.getByName(node.host)
 		ServerSocket(node.port, 10, inetAddress).use { listener ->
 			loop {
-				println("Listening on: ${listener.localSocketAddress}:${listener.localPort}")
+				println("Listening on: ${listener.localSocketAddress}")
 				listener.accept().use { socket ->
 					// ..... open .....
 					val input = socket.getDataInputStream()
