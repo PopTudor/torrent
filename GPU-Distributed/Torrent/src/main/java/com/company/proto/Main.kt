@@ -11,21 +11,19 @@ import java.util.Arrays
 
 
 fun main(args: Array<String>) {
-//	ipSuffixes.flatMap { ip -> portOffset.map { port -> Pair(ipPreffix + ip, basePort + port) } }
-//			.map { (host, port) ->
-//				Torrent.Node.newBuilder()
-//						.setHost(host)
-//						.setPort(port)
-//						.build()
-//			}
-//			.toObservable()
-//			.subscribe({
-//				nodeList.add(it)
-//				Server(it)
-//			}, {})
-	val node = Torrent.Node.newBuilder()
-			.setHost("127.0.0.1")
-			.setPort(5004).build()
-
-	val server = Server(node)
+	val elements = ipSuffixes.flatMap { ip -> portOffset.map { port -> Pair(ipPreffix + ip, basePort + port) } }
+			.map { (host, port) ->
+				Torrent.Node.newBuilder()
+						.setHost(host)
+						.setPort(port)
+						.build()
+			}
+	nodeList.addAll(elements)
+	nodeList.forEach {
+		thread { Server(it) }
+	}
+//	val node = Torrent.Node.newBuilder()
+//			.setHost("127.0.0.1")
+//			.setPort(5005).build()
+	
 }

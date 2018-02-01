@@ -22,18 +22,7 @@ class ReplicateHandler(
 		
 		duplicates.add(Duplicate(fileInfoDup, storage[fileInfoDup]))
 		
-		return successFileReplicated(message.chunkRequest)
-	}
-	
-	private fun messageError(): Torrent.Message {
-		val build = Torrent.ReplicateResponse.newBuilder()
-				.setStatus(Torrent.Status.MESSAGE_ERROR)
-				.setErrorMessage("The filename is empty")
-				.build()
-		return Torrent.Message.newBuilder()
-				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
-				.setReplicateResponse(build)
-				.build()
+		return successFileReplicated(message.replicateRequest.fileInfo)
 	}
 	
 	private fun replicate(fileinfo: Torrent.FileInfo): Torrent.Message {
@@ -41,7 +30,7 @@ class ReplicateHandler(
 		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
 		val chunkData = mutableMapOf<Torrent.ChunkInfo, ByteString>()
 		fileinfo.chunksList.forEach { chunkInfo ->
-			nodeObservable(currentNode).forEach { node ->
+			nodeList.filter { it != currentNode }.forEach { node ->
 				Socket(node.host, node.port).use { socket ->
 					try {
 						val output = socket.getDataOutputStream()
@@ -93,6 +82,23 @@ class ReplicateHandler(
 		return response.build()
 	}
 	
+	private fun successFileReplicated(fileInfo: Torrent.FileInfo): Torrent.Message {
+		println("File replicated for ${fileInfo.hash.hashToReadableMD5()}")
+		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
+				.setStatus(Torrent.Status.SUCCESS)
+		fileInfo.chunksList.forEach {
+			val nodeReplicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+					.setStatus(Torrent.Status.SUCCESS)
+					.setNode(currentNode)
+					.setChunkIndex(it.index)
+			replicateResponse.addNodeStatusList(nodeReplicationStatus)
+		}
+		return Torrent.Message.newBuilder()
+				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
+				.setReplicateResponse(replicateResponse)
+				.build()
+	}
+	
 	private fun createChunkRequest(fileHash: ByteString, chunkIndex: Int): Torrent.Message {
 		val build = Torrent.ChunkRequest.newBuilder()
 				.setFileHash(fileHash)
@@ -104,16 +110,10 @@ class ReplicateHandler(
 				.build()
 	}
 	
-	private fun successFileReplicated(chunkRequest: Torrent.ChunkRequest): Torrent.Message {
-		println("File replicated for ${chunkRequest.fileHash.hashToReadableMD5()}")
-		val nodeReplicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-				.setStatus(Torrent.Status.SUCCESS)
-				.setNode(currentNode)
-				.setChunkIndex(chunkRequest.chunkIndex)
-				.build()
+	private fun messageError(): Torrent.Message {
 		val build = Torrent.ReplicateResponse.newBuilder()
-				.addNodeStatusList(nodeReplicationStatus)
-				.setStatus(Torrent.Status.SUCCESS)
+				.setStatus(Torrent.Status.MESSAGE_ERROR)
+				.setErrorMessage("The filename is empty")
 				.build()
 		return Torrent.Message.newBuilder()
 				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)

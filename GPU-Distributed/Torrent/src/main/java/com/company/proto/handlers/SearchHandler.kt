@@ -12,7 +12,10 @@ import java.net.ConnectException
 import java.net.Socket
 
 
-class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val currentNode: Torrent.Node) : Handler {
+class SearchHandler(
+		private val storage: Map<Torrent.FileInfo, ByteString>,
+		private val currentNode: Torrent.Node
+) : Handler {
 	private val localSearchHandler: LocalSearchHandler = LocalSearchHandler(storage)
 	
 	override fun handle(message: Torrent.Message): Torrent.Message {
@@ -42,10 +45,11 @@ class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val curr
 	}
 	
 	private fun askOtherNodesFor(currentNodeSearchResult: Torrent.NodeSearchResult, regex: String): Torrent.Message {
+		println("SearchHandler - ask nodes:${currentNode.host}:${currentNode.port}")
 		val searchResponse = Torrent.SearchResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.addResults(currentNodeSearchResult)
-		nodeObservable(currentNode).forEach { node ->
+		nodeList.filter { it != currentNode }.forEach { node ->
 			try {
 				Socket(node.host, node.port).use { socket ->
 					val output = socket.getDataOutputStream()
