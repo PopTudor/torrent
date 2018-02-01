@@ -43,13 +43,12 @@ class SearchHandler(storage: Map<Torrent.FileInfo, ByteString>, private val curr
 	private fun askOtherNodesFor(currentNodeSearchResult: Torrent.NodeSearchResult, regex: String): Torrent.Message {
 		val searchResponse = Torrent.SearchResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
-				.setErrorMessage("SUCCESS")
 				.addResults(currentNodeSearchResult)
 		nodeObservable(currentNode).forEach { node ->
 			try {
 				Socket(node.host, node.port).use { socket ->
-					val output = DataOutputStream(socket.getOutputStream())
-					val input = DataInputStream(socket.getInputStream())
+					val output = socket.getDataOutputStream()
+					val input = socket.getDataInputStream()
 					
 					val reqMessage = createLocalSearchRequest(regex)
 					output.writeMessage(reqMessage)

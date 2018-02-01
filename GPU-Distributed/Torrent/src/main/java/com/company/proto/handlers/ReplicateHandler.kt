@@ -85,11 +85,6 @@ class ReplicateHandler(
 		}
 		val finalData = ByteString.copyFrom(chunkData.values)
 		if (finalData.toMD5Hash() == fileinfo.hash) {
-			val fileinfoKey = Torrent.FileInfo.newBuilder()
-					.addAllChunks(chunkData.keys)
-					.setFilename(fileinfo.filename)
-					.setHash(fileinfo.hash)
-					.setSize(finalData.size())
 			storage[fileinfo] = finalData
 			message.replicateResponse = replicateResponse.build()
 		} else {

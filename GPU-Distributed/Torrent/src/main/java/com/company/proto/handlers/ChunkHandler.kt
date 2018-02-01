@@ -18,10 +18,10 @@ class ChunkHandler(
 		val fileInfo = storage.keys.find { it.hash == hash } ?: return unableToComplete(hash)
 		
 		val bytes = storage[fileInfo] ?: return processingError()
-		return chunkResponse(bytes, fileInfo.getChunks(chunkIndex))
+		return chunkResponse(fileInfo.getChunks(chunkIndex), bytes)
 	}
 	
-	private fun chunkResponse(bytes: ByteString, chunkInfo: Torrent.ChunkInfo): Torrent.Message {
+	private fun chunkResponse(chunkInfo: Torrent.ChunkInfo, bytes: ByteString): Torrent.Message {
 		val data = bytes.toChunkAt(chunkInfo) ?: return processingError()
 		println("Chunk found: $chunkInfo")
 		val build = Torrent.ChunkResponse.newBuilder()
