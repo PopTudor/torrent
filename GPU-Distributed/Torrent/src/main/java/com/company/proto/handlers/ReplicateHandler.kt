@@ -3,8 +3,6 @@ package com.company.proto.handlers
 import com.company.proto.*
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.IOException
 import java.net.ConnectException
 import java.net.Socket
@@ -22,7 +20,7 @@ class ReplicateHandler(
 		
 		val fileInfoDup = storage.keys.find { it.hash == hash } ?: return replicate(message.replicateRequest.fileInfo)
 		
-		duplicates.add(Duplicate(filename, storage[fileInfoDup]))
+		duplicates.add(Duplicate(fileInfoDup, storage[fileInfoDup]))
 		
 		return successFileReplicated(message.chunkRequest)
 	}
@@ -41,8 +39,6 @@ class ReplicateHandler(
 	private fun replicate(fileinfo: Torrent.FileInfo): Torrent.Message {
 		println("Replicate: ${fileinfo.hash.hashToReadableMD5()}")
 		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
-		val message = Torrent.Message.newBuilder()
-				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
 		val chunkData = mutableMapOf<Torrent.ChunkInfo, ByteString>()
 		fileinfo.chunksList.forEach { chunkInfo ->
 			nodeObservable(currentNode).forEach { node ->
@@ -75,25 +71,26 @@ class ReplicateHandler(
 							replicateResponse.errorMessage = "NETWORK_ERROR"
 							replicationStatus.status = Torrent.Status.NETWORK_ERROR
 						} else {
-							replicationStatus.status = Torrent.Status.PROCESSING_ERROR
 							replicateResponse.errorMessage = "PROCESSING_ERROR"
+							replicationStatus.status = Torrent.Status.PROCESSING_ERROR
 						}
 						replicateResponse.addNodeStatusList(replicationStatus.build())
 					}
 				}
 			}
 		}
+		val response = Torrent.Message.newBuilder().setType(Torrent.Message.Type.REPLICATE_RESPONSE)
 		val finalData = ByteString.copyFrom(chunkData.values)
 		if (finalData.toMD5Hash() == fileinfo.hash) {
 			storage[fileinfo] = finalData
-			message.replicateResponse = replicateResponse.build()
+			response.replicateResponse = replicateResponse.build()
 		} else {
-			message.replicateResponse = Torrent.ReplicateResponse.newBuilder()
+			response.replicateResponse = Torrent.ReplicateResponse.newBuilder()
 					.setStatus(Torrent.Status.PROCESSING_ERROR)
 					.setErrorMessage("The received chunks do not add up to file size")
 					.build()
 		}
-		return message.build()
+		return response.build()
 	}
 	
 	private fun createChunkRequest(fileHash: ByteString, chunkIndex: Int): Torrent.Message {

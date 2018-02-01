@@ -35,8 +35,7 @@ class ChunkHandler(
 	}
 	
 	private fun processingError(): Torrent.Message {
-		val build = Torrent.ChunkResponse
-				.newBuilder()
+		val build = Torrent.ChunkResponse.newBuilder()
 				.setStatus(Torrent.Status.PROCESSING_ERROR)
 				.setErrorMessage("Chunk not found")
 				.setData(ByteString.EMPTY)
@@ -64,7 +63,6 @@ class ChunkHandler(
 		println("Missing chunk for file hash ${hash.hashToReadableMD5()}")
 		val build = Torrent.ChunkResponse.newBuilder()
 				.setStatus(Torrent.Status.UNABLE_TO_COMPLETE)
-				.setErrorMessage(hash.hashToReadableMD5())
 				.setData(ByteString.EMPTY)
 				.build()
 		return Torrent.Message.newBuilder()
