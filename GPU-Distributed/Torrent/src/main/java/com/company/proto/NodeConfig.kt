@@ -18,8 +18,11 @@ import java.util.stream.Stream
 
 val CHUNK_SIZE = 1024
 
+private val PORT_START = 5001
+private val PORT_END = 5005
+
 fun nodeList(): List<Torrent.Node> {
-	return IntStream.rangeClosed(5001, 5005)
+	return IntStream.rangeClosed(PORT_START, PORT_END)
 			.mapToObj { index ->
 				Torrent.Node.newBuilder()
 						.setHost("127.0.0.1")

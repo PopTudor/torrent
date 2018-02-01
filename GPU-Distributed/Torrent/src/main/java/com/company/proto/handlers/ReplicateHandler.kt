@@ -48,8 +48,8 @@ class ReplicateHandler(
 			nodeObservable(currentNode).forEach { node ->
 				Socket(node.host, node.port).use { socket ->
 					try {
-						val output = DataOutputStream(socket.getOutputStream())
-						val input = DataInputStream(socket.getInputStream())
+						val output = socket.getDataOutputStream()
+						val input = socket.getDataInputStream()
 						
 						val reqMessage = createChunkRequest(fileinfo.hash, chunkInfo.index)
 						output.writeMessage(reqMessage)
@@ -79,13 +79,17 @@ class ReplicateHandler(
 							replicateResponse.errorMessage = "PROCESSING_ERROR"
 						}
 						replicateResponse.addNodeStatusList(replicationStatus.build())
-						error.printStackTrace()
 					}
 				}
 			}
 		}
 		val finalData = ByteString.copyFrom(chunkData.values)
 		if (finalData.toMD5Hash() == fileinfo.hash) {
+			val fileinfoKey = Torrent.FileInfo.newBuilder()
+					.addAllChunks(chunkData.keys)
+					.setFilename(fileinfo.filename)
+					.setHash(fileinfo.hash)
+					.setSize(finalData.size())
 			storage[fileinfo] = finalData
 			message.replicateResponse = replicateResponse.build()
 		} else {

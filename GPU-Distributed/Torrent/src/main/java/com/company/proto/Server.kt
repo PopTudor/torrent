@@ -18,6 +18,7 @@ constructor(host: String, port: Int) {
 				.setHost(host)
 				.setPort(port)
 				.build()
+		nodeList.add(node)
 		val inetAddress = InetAddress.getByName(node.host)
 		ServerSocket(node.port, 10, inetAddress).use { listener ->
 			loop {
