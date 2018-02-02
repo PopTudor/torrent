@@ -19,7 +19,7 @@ class LocalSearchHandler(private val storage: Map<Torrent.FileInfo, ByteString>)
 	
 	private fun successWithResult(fileInfo: List<Torrent.FileInfo>): Torrent.Message {
 		print("Local Search: ")
-		 fileInfo.forEach { print(it.hash.hashToReadableMD5()+" ") }
+		fileInfo.forEach { print(it.hash.hashToReadableMD5() + " ") }
 		val localSearchResponse = Torrent.LocalSearchResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 				.addAllFileInfo(fileInfo)

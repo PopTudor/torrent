@@ -1,6 +1,9 @@
 package com.company.proto.handlers
 
 import com.company.proto.*
+import com.company.proto.exceptions.MessageErrorException
+import com.company.proto.exceptions.ProcessingErrorException
+import com.company.proto.exceptions.UnableToCompleteException
 import com.company.proto.torrent.Torrent
 import com.google.protobuf.ByteString
 import java.io.IOException
@@ -29,52 +32,86 @@ class ReplicateHandler(
 		println("Replicate: ${fileinfo.hash.hashToReadableMD5()}")
 		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
 		val chunkData = mutableMapOf<Torrent.ChunkInfo, ByteString>()
-		fileinfo.chunksList.forEach { chunkInfo ->
-			nodeList.filter { it != currentNode }.forEach { node ->
-				Socket(node.host, node.port).use { socket ->
-					try {
+		val response = Torrent.Message.newBuilder()
+				.setType(Torrent.Message.Type.REPLICATE_RESPONSE)
+		
+		for (chunkInfo in fileinfo.chunksList) {
+			// if got the chunk from other node, move to the next on
+			if (chunkInfo in chunkData.keys) continue
+			for (node in nodeList) {
+				try {
+					if (node == currentNode) continue
+					Socket(node.host, node.port).use { socket ->
 						val output = socket.getDataOutputStream()
 						val input = socket.getDataInputStream()
 						
-						val reqMessage = createChunkRequest(fileinfo.hash, chunkInfo.index)
-						output.writeMessage(reqMessage)
+						val chunkRequest = createChunkRequest(fileinfo.hash, chunkInfo.index)
+						output.writeMessage(chunkRequest)
 						
-						val resMessage = input.readMessage()
-						val chunkResponse = resMessage.chunkResponse
-						val chunkInfoResponse = Torrent.ChunkInfo.newBuilder()
-								.setHash(chunkResponse.data.toMD5Hash())
-								.setIndex(chunkInfo.index)
-								.setSize(chunkResponse.data.size())
-								.build()
-						chunkData[chunkInfoResponse] = chunkResponse.data
-						val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-								.setNode(node)
-								.setChunkIndex(chunkInfo.index)
-								.setStatus(chunkResponse.status)
-						replicateResponse.addNodeStatusList(replicationStatus.build())
-					} catch (error: IOException) {
-						val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-								.setNode(node)
-								.setChunkIndex(chunkInfo.index)
-						if (error is ConnectException) {
-							replicateResponse.errorMessage = "NETWORK_ERROR"
-							replicationStatus.status = Torrent.Status.NETWORK_ERROR
-						} else {
-							replicateResponse.errorMessage = "PROCESSING_ERROR"
-							replicationStatus.status = Torrent.Status.PROCESSING_ERROR
+						val chunkResponse = input.readMessage().chunkResponse
+						when {
+							chunkResponse.status == Torrent.Status.PROCESSING_ERROR -> throw ProcessingErrorException()
+							chunkResponse.status == Torrent.Status.MESSAGE_ERROR -> throw MessageErrorException()
+							chunkResponse.status == Torrent.Status.UNABLE_TO_COMPLETE -> throw UnableToCompleteException()
+							else -> { // success
+								val chunkInfoResponse = Torrent.ChunkInfo.newBuilder()
+										.setHash(chunkResponse.data.toMD5Hash())
+										.setIndex(chunkInfo.index)
+										.setSize(chunkResponse.data.size())
+										.build()
+								chunkData[chunkInfoResponse] = chunkResponse.data
+								val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+										.setNode(node)
+										.setChunkIndex(chunkInfo.index)
+										.setStatus(chunkResponse.status)
+								replicateResponse.addNodeStatusList(replicationStatus.build())
+							}
 						}
-						replicateResponse.addNodeStatusList(replicationStatus.build())
+						
 					}
+				} catch (processingError: ProcessingErrorException) {
+					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+							.setNode(node)
+							.setChunkIndex(chunkInfo.index)
+							.setStatus(Torrent.Status.PROCESSING_ERROR)
+					replicateResponse.addNodeStatusList(replicationStatus.build())
+				} catch (messageError: MessageErrorException) {
+					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+							.setNode(node)
+							.setChunkIndex(chunkInfo.index)
+							.setStatus(Torrent.Status.MESSAGE_ERROR)
+					replicateResponse.addNodeStatusList(replicationStatus.build())
+				} catch (unableToComplete: UnableToCompleteException) {
+					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+							.setNode(node)
+							.setChunkIndex(chunkInfo.index)
+							.setStatus(Torrent.Status.UNABLE_TO_COMPLETE)
+					replicateResponse.addNodeStatusList(replicationStatus.build())
+				} catch (error: IOException) {
+					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+							.setNode(node)
+							.setChunkIndex(chunkInfo.index)
+					replicationStatus.status = Torrent.Status.NETWORK_ERROR
+					replicateResponse.addNodeStatusList(replicationStatus.build())
+				}
+				if (chunkInfo !in chunkData.keys) {
+					replicateResponse.status = Torrent.Status.UNABLE_TO_COMPLETE
+					replicateResponse.errorMessage = "Did not receive the chunk $chunkInfo from any node"
+					replicateResponse.clearNodeStatusList()
+					response.replicateResponse = replicateResponse.build()
+					return response.build()
 				}
 			}
 		}
-		val response = Torrent.Message.newBuilder().setType(Torrent.Message.Type.REPLICATE_RESPONSE)
+		
 		val finalData = ByteString.copyFrom(chunkData.values)
-		if (finalData.toMD5Hash() == fileinfo.hash) {
-			storage[fileinfo] = finalData
-			response.replicateResponse = replicateResponse.build()
-		} else {
-			response.replicateResponse = Torrent.ReplicateResponse.newBuilder()
+		when {
+			finalData.toMD5Hash() == fileinfo.hash -> {
+				storage[fileinfo] = finalData
+				replicateResponse.status = Torrent.Status.SUCCESS
+				response.replicateResponse = replicateResponse.build()
+			}
+			else -> response.replicateResponse = Torrent.ReplicateResponse.newBuilder()
 					.setStatus(Torrent.Status.PROCESSING_ERROR)
 					.setErrorMessage("The received chunks do not add up to file size")
 					.build()
@@ -82,8 +119,9 @@ class ReplicateHandler(
 		return response.build()
 	}
 	
+	
 	private fun successFileReplicated(fileInfo: Torrent.FileInfo): Torrent.Message {
-		println("File replicated for ${fileInfo.hash.hashToReadableMD5()}")
+		println("Succes replicate: ${fileInfo.hash.hashToReadableMD5()}")
 		val replicateResponse = Torrent.ReplicateResponse.newBuilder()
 				.setStatus(Torrent.Status.SUCCESS)
 		fileInfo.chunksList.forEach {

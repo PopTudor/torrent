@@ -19,11 +19,11 @@ fun main(args: Array<String>) {
 						.build()
 			}
 	nodeList.addAll(elements)
-	nodeList.forEach {
-		thread { Server(it) }
-	}
-//	val node = Torrent.Node.newBuilder()
-//			.setHost("127.0.0.1")
-//			.setPort(5005).build()
-	
+//	nodeList.forEach {
+//		thread { Server(it) }
+//	}
+	val node = Torrent.Node.newBuilder()
+			.setHost("127.0.0.1")
+			.setPort(5003).build()
+	Server(node)
 }
