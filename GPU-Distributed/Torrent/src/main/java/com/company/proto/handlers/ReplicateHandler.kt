@@ -49,61 +49,34 @@ class ReplicateHandler(
 						output.writeMessage(chunkRequest)
 						
 						val chunkResponse = input.readMessage().chunkResponse
-						when {
-							chunkResponse.status == Torrent.Status.PROCESSING_ERROR -> throw ProcessingErrorException()
-							chunkResponse.status == Torrent.Status.MESSAGE_ERROR -> throw MessageErrorException()
-							chunkResponse.status == Torrent.Status.UNABLE_TO_COMPLETE -> throw UnableToCompleteException()
-							else -> { // success
-								val chunkInfoResponse = Torrent.ChunkInfo.newBuilder()
-										.setHash(chunkResponse.data.toMD5Hash())
-										.setIndex(chunkInfo.index)
-										.setSize(chunkResponse.data.size())
-										.build()
-								chunkData[chunkInfoResponse] = chunkResponse.data
-								val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-										.setNode(node)
-										.setChunkIndex(chunkInfo.index)
-										.setStatus(chunkResponse.status)
-								replicateResponse.addNodeStatusList(replicationStatus.build())
-							}
-						}
-						
+						val chunkInfoResponse = Torrent.ChunkInfo.newBuilder()
+								.setHash(chunkResponse.data.toMD5Hash())
+								.setIndex(chunkInfo.index)
+								.setSize(chunkResponse.data.size())
+								.build()
+						chunkData[chunkInfoResponse] = chunkResponse.data
+						val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
+								.setNode(node)
+								.setChunkIndex(chunkInfo.index)
+								.setStatus(chunkResponse.status)
+						replicateResponse.addNodeStatusList(replicationStatus.build())
 					}
-				} catch (processingError: ProcessingErrorException) {
-					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-							.setNode(node)
-							.setChunkIndex(chunkInfo.index)
-							.setStatus(Torrent.Status.PROCESSING_ERROR)
-					replicateResponse.addNodeStatusList(replicationStatus.build())
-				} catch (messageError: MessageErrorException) {
-					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-							.setNode(node)
-							.setChunkIndex(chunkInfo.index)
-							.setStatus(Torrent.Status.MESSAGE_ERROR)
-					replicateResponse.addNodeStatusList(replicationStatus.build())
-				} catch (unableToComplete: UnableToCompleteException) {
-					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
-							.setNode(node)
-							.setChunkIndex(chunkInfo.index)
-							.setStatus(Torrent.Status.UNABLE_TO_COMPLETE)
-					replicateResponse.addNodeStatusList(replicationStatus.build())
 				} catch (error: IOException) {
 					val replicationStatus = Torrent.NodeReplicationStatus.newBuilder()
 							.setNode(node)
 							.setChunkIndex(chunkInfo.index)
-					replicationStatus.status = Torrent.Status.NETWORK_ERROR
+							.setStatus(Torrent.Status.NETWORK_ERROR)
 					replicateResponse.addNodeStatusList(replicationStatus.build())
 				}
-				if (chunkInfo !in chunkData.keys) {
-					replicateResponse.status = Torrent.Status.UNABLE_TO_COMPLETE
-					replicateResponse.errorMessage = "Did not receive the chunk $chunkInfo from any node"
-					replicateResponse.clearNodeStatusList()
-					response.replicateResponse = replicateResponse.build()
-					return response.build()
-				}
+			}
+			if (chunkInfo !in chunkData.keys) {
+				replicateResponse.status = Torrent.Status.UNABLE_TO_COMPLETE
+				replicateResponse.errorMessage = "Did not receive the chunk ${chunkInfo.hash.hashToReadableMD5()} from any node"
+				replicateResponse.clearNodeStatusList()
+				response.replicateResponse = replicateResponse.build()
+				return response.build()
 			}
 		}
-		
 		val finalData = ByteString.copyFrom(chunkData.values)
 		when {
 			finalData.toMD5Hash() == fileinfo.hash -> {

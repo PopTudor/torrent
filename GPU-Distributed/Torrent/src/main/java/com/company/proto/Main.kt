@@ -19,6 +19,7 @@ fun main(args: Array<String>) {
 						.build()
 			}
 	nodeList.addAll(elements)
+	
 //	nodeList.forEach {
 //		thread { Server(it) }
 //	}
