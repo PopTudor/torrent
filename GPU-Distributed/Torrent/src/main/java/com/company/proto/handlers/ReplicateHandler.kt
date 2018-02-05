@@ -40,7 +40,7 @@ class ReplicateHandler(
 			if (chunkInfo in chunkData.keys) continue
 			for (node in nodeList) {
 				try {
-					if (node == currentNode) continue
+					if (node == currentNode || chunkInfo in chunkData.keys) continue
 					Socket(node.host, node.port).use { socket ->
 						val output = socket.getDataOutputStream()
 						val input = socket.getDataInputStream()
