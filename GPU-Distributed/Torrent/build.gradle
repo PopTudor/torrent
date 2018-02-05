@@ -63,21 +63,21 @@ sourceCompatibility = 1.8
 repositories {
 	mavenCentral()
 }
-
+def ip = "127.0.0.1"
 task serverOne(type: JavaExec) {
 	classpath sourceSets.main.runtimeClasspath
 	main = "com.company.proto.Server"
-	args "127.0.0.1", "5001"
+	args ip, "5001"
 }
 task serverTwo(type: JavaExec) {
 	classpath sourceSets.main.runtimeClasspath
 	main = "com.company.proto.Server"
-	args "127.0.0.1", "5002"
+	args ip, "5002"
 }
 task serverThree(type: JavaExec) {
 	classpath sourceSets.main.runtimeClasspath
 	main = "com.company.proto.Server"
-	args "127.0.0.1", "5003"
+	args ip, "5003"
 }
 task runAll << {
 	println 'Starting servers'

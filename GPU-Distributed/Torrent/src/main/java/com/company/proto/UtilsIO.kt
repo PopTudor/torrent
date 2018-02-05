@@ -6,13 +6,16 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 import java.net.Socket
+import java.nio.ByteBuffer
 
 @Throws(IOException::class)
 fun DataInputStream.readMessage(): Torrent.Message {
 	val len = this.readInt()
 	val data = ByteArray(len)
-	val readLen = this.read(data, 0, len)
-	if (readLen == -1) throw IOException("error")
+	var read = 0
+	while (read < len) {
+		read += read(data, read, len - read)
+	}
 	return Torrent.Message.parseFrom(data)
 }
 
