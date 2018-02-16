@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service
 @Service
 class TwoPhaseScheduler(
 		private val locksTable: LocksTable,
-		private val transactionTable: TransactionsTable
+		private val waitForGraphTable: WaitForGraphTable
 ) {
 	
 	@Synchronized
@@ -13,27 +13,52 @@ class TwoPhaseScheduler(
 		val table = resource.javaClass.simpleName
 		val lock = Lock(LockType.READ, resource, table, transaction)
 		return when {
-			locksTable.isUnlocked(lock) -> locksTable.lock(lock)
-			locksTable.hasReadLock(lock) -> locksTable[lock]
-			else -> lock
+			locksTable.isUnlocked(lock) -> {
+				locksTable += lock
+				lock
+			}
+			locksTable.hasWriteLock(lock) -> {
+				while (locksTable.hasWriteLock(lock)) {
+					if (isDeadlock()) {
+						releaseLocks(transaction)
+						transaction.status = TransactionStatus.ABORT
+					}
+					val transHasLock = locksTable[lock]!!.transaction
+					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
+					Thread.sleep(100)
+				}
+				lock
+			}
+			locksTable.hasReadLock(lock) -> {
+				locksTable += lock
+				lock
+			}
+			else -> throw IllegalArgumentException()
 		}
 	}
 	
-	fun writeLock(transaction: Transaction, resource: Any): WaitForData {
-		val table = resource.javaClass.simpleName
-		val lock = Lock(LockType.READ, resource, table, transaction)
-		when {
-			locksTable.isUnlocked(lock) -> locksTable.lock(lock)
-			else -> TODO("wait for unlock")
+	private fun isDeadlock(): Boolean {
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+	
+	private fun releaseLocks(transaction: Transaction) {
+		locksTable.forEach {
+			if (it.transaction.id == transaction.id) {
+				locksTable -= it
+			}
 		}
 	}
 	
-	fun schedule(transaction: Transaction) {
-		transactionTable += transaction
-	}
+//	fun writeLock(transaction: Transaction, resource: Any): WaitFor {
+//		val table = resource.javaClass.simpleName
+//		val lock = Lock(LockType.READ, resource, table, transaction)
+//		when {
+//			locksTable.isUnlocked(lock) -> locksTable.lock(lock)
+//			else -> TODO("wait for unlock")
+//		}
+//	}
 	
 	fun release(lock: Lock) {
-		transactionTable -= lock.transaction
 		locksTable -= lock
 	}
 	

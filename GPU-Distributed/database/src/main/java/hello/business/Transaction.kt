@@ -3,7 +3,11 @@ package hello.business
 import java.util.*
 
 
-data class Transaction(val id: Int = randInt(), val timestamp: Date = Date(), val status: TransactionStatus)
+data class Transaction(
+		val id: Int = randInt(),
+		val timestamp: Date = Date(),
+		var status: TransactionStatus
+)
 
 enum class TransactionStatus { ACTIVE, ABORT, COMMIT }
 

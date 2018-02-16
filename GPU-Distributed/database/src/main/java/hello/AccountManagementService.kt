@@ -1,6 +1,7 @@
 package hello
 
 import hello.business.Transaction
+import hello.business.TransactionHistory
 import hello.business.TransactionStatus
 import hello.business.TwoPhaseScheduler
 import hello.data.DepositStatus
@@ -21,7 +22,6 @@ class AccountManagementService(
 	
 	fun deposit(deposit: Double, user: String): DepositStatus {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.schedule(transaction)
 		
 		val readLock = twoPhaseScheduler.readLock(transaction, user)
 		var account = retrieveUser(user)
@@ -29,10 +29,11 @@ class AccountManagementService(
 			twoPhaseScheduler.release(readLock)
 			return DepositStatus(0.0, "User not found")
 		}
+		TransactionHistory += account
 		
 		account.balance += deposit
 		
-		twoPhaseScheduler.writeLock(transaction, account)
+//		twoPhaseScheduler.writeLock(transaction, account)
 		saveAccount(account)
 //		updateAccountHistory(account)
 //
