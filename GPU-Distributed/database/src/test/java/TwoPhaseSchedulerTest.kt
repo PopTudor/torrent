@@ -223,6 +223,22 @@ class TwoPhaseSchedulerTest {
 	}
 	
 	@Test
+	fun oneTransaction_OneResource_ReleaseLocks() {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val writeLock = twoPhaseScheduler.readLock(transaction, "test")
+		val readLock1 = twoPhaseScheduler.writeLock(transaction, "test")
+		
+		twoPhaseScheduler.releaseLocks(transaction)
+		
+		val numOfAliveLocks = locksTable[readLock1].size
+		val numOfAliveTransactions = locksTable[readLock1].map { it.transaction }.size
+		
+		Assert.assertTrue(numOfAliveLocks == 0)
+		Assert.assertTrue(numOfAliveTransactions == 0)
+		
+	}
+	
+	@Test
 	fun twoTransaction_OneResource_WriteLock_ReadLock() {
 		val countDownLatch = CountDownLatch(1)
 		
@@ -242,6 +258,27 @@ class TwoPhaseSchedulerTest {
 		println("finished: $transaction1")
 		thread.join()
 	}
+
+//	@Test
+//	fun twoTransaction_OneResource_WriteLock_WriteLock() {
+//		val countDownLatch = CountDownLatch(1)
+//
+//		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+//		twoPhaseScheduler.writeLock(transaction1, "test")
+//
+//		val thread = thread {
+//			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+//			println("blocked $transaction2")
+//			twoPhaseScheduler.readLock(transaction2, "test")
+//			println("finished: $transaction2")
+//		}
+//
+//		println("holding R: $transaction1")
+//		countDownLatch.await(2, TimeUnit.SECONDS)
+//		twoPhaseScheduler.releaseLocks(transaction1)
+//		println("finished: $transaction1")
+//		thread.join()
+//	}
 	
 	
 }
