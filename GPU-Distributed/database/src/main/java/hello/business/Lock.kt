@@ -10,6 +10,8 @@ data class Lock(
 ) : ReentrantReadWriteLock() {
 	val id: Int = randInt()
 	
+	fun isReadLock() = type == LockType.READ
+	fun isWriteLock() = type == LockType.WRITE
 }
 
 enum class LockType { READ, WRITE }

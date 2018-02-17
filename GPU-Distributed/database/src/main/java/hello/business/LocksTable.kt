@@ -24,6 +24,7 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 		}
 	}
 	
+	
 	operator fun get(lock: Lock): List<Lock> {
 		return locks[lock.resource]!!.filter { it.resource == lock.resource }
 	}
@@ -48,5 +49,9 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 	operator fun minusAssign(lock: Lock) {
 		locks -= lock.resource
 		transactionsTable += lock.transaction
+	}
+	
+	fun hasWriteLockForTransaction(transaction: Transaction): Boolean {
+		return locks.values.flatten().any { it.type == LockType.WRITE && it.transaction == transaction }
 	}
 }

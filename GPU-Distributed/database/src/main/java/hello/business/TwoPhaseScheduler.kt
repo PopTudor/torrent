@@ -17,7 +17,16 @@ class TwoPhaseScheduler(
 				locksTable += lock
 				lock
 			}
+			locksTable.hasReadLock(lock) -> {
+				locksTable += lock
+				lock
+			}
+			
 			locksTable.hasWriteLock(lock) -> {
+				if (locksTable.hasWriteLockForTransaction(transaction)) {
+					return lock
+				}
+				
 				while (locksTable.hasWriteLock(lock)) {
 					if (isDeadlock()) {
 						releaseLocks(transaction)
@@ -27,10 +36,6 @@ class TwoPhaseScheduler(
 					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
-				lock
-			}
-			locksTable.hasReadLock(lock) -> {
-				locksTable += lock
 				lock
 			}
 			else -> throw IllegalArgumentException()
@@ -46,6 +51,10 @@ class TwoPhaseScheduler(
 				locksTable += (lock)
 				lock
 			}
+			locksTable.hasReadLock(lock) -> {
+				locksTable += lock
+				lock
+			}
 			locksTable.hasWriteLock(lock) -> {
 				while (locksTable.hasWriteLock(lock)) {
 					if (isDeadlock()) {
@@ -56,9 +65,6 @@ class TwoPhaseScheduler(
 					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
-				lock
-			}
-			locksTable.hasReadLock(lock) -> {
 				locksTable += lock
 				lock
 			}
@@ -70,7 +76,7 @@ class TwoPhaseScheduler(
 		return false
 	}
 	
-	private fun releaseLocks(transaction: Transaction) {
+	public fun releaseLocks(transaction: Transaction) {
 		locksTable.forEach {
 			if (it.transaction.id == transaction.id) {
 				locksTable -= it

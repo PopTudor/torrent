@@ -2,6 +2,9 @@ import hello.business.*
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class TwoPhaseSchedulerTest {
 	lateinit var locksTable: LocksTable;
@@ -18,17 +21,25 @@ class TwoPhaseSchedulerTest {
 	}
 	
 	@Test
-	fun oneTransaction_OneResource_Unlocked() {
+	fun oneTransaction_OneResource_Unlocked_Acquires_ReadLock() {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		val readlock = twoPhaseScheduler.readLock(transaction, "test")
-		val acquiredTransaction = transactionTable[readlock.transaction]
 		val storedLock = locksTable[readlock]
 		
 		Assert.assertNotNull(readlock)
-		Assert.assertNotNull(acquiredTransaction)
+		Assert.assertTrue(readlock.type == LockType.READ)
 		Assert.assertTrue(storedLock.isNotEmpty())
 		Assert.assertEquals(readlock, storedLock[0])
-		Assert.assertEquals(storedLock[0].transaction, acquiredTransaction)
+	}
+	
+	@Test
+	fun oneTransaction_OneResource_Unlocked_StoresTransaction() {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val readlock = twoPhaseScheduler.readLock(transaction, "test")
+		val acquiredTransaction = transactionTable[readlock.transaction]
+		
+		Assert.assertNotNull(acquiredTransaction)
+		Assert.assertEquals(transaction, acquiredTransaction)
 	}
 	
 	@Test
@@ -51,6 +62,9 @@ class TwoPhaseSchedulerTest {
 		
 		Assert.assertTrue(storedLock1.isNotEmpty())
 		Assert.assertTrue(storedLock2.isNotEmpty())
+		
+		Assert.assertTrue(readLock1.type == LockType.READ)
+		Assert.assertTrue(readLock2.type == LockType.READ)
 		
 		Assert.assertEquals(transaction, aquiredTransaction)
 		Assert.assertEquals(transaction, aquiredTransaction1)
@@ -121,6 +135,113 @@ class TwoPhaseSchedulerTest {
 		Assert.assertEquals(readLock1, storedLock2[0]) // lock1 and lock2 share same resource
 	}
 	
+	@Test
+	fun oneTransaction_OneResource_ReadLock_WriteLock_AcquiresLocks() {
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		val readLock = twoPhaseScheduler.readLock(transaction1, "test")
+		val writeLock = twoPhaseScheduler.writeLock(transaction1, "test")
+		
+		Assert.assertNotNull(readLock)
+		Assert.assertNotNull(writeLock)
+		
+		Assert.assertTrue(readLock.type == LockType.READ)
+		Assert.assertTrue(writeLock.type == LockType.WRITE)
+		
+		Assert.assertNotEquals(readLock, writeLock)
+	}
+	
+	@Test
+	fun oneTransaction_OneResource_ReadLock_WriteLock_StoresTransaction() {
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		val readLock = twoPhaseScheduler.readLock(transaction1, "test")
+		val writeLock = twoPhaseScheduler.writeLock(transaction1, "test")
+		val storedTransaction = transactionTable[readLock.transaction]
+		val storedTransaction1 = transactionTable[writeLock.transaction]
+		
+		Assert.assertNotNull(storedTransaction)
+		Assert.assertNotNull(storedTransaction1)
+	}
+	
+	@Test
+	fun oneTransaction_OneResource_ReadLock_WriteLock_StoresSameTransaction() {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val readLock = twoPhaseScheduler.readLock(transaction, "test")
+		val writeLock = twoPhaseScheduler.writeLock(transaction, "test")
+		val storedTransaction1 = transactionTable[readLock.transaction]
+		val storedTransaction2 = transactionTable[writeLock.transaction]
+		
+		Assert.assertEquals(transaction, storedTransaction1)
+		Assert.assertEquals(transaction, storedTransaction2)
+		Assert.assertEquals(storedTransaction1, storedTransaction2)
+	}
+	
+	@Test
+	fun oneTransaction_OneResource_ReadLock_WriteLock_ReadLock() {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val readLock1 = twoPhaseScheduler.readLock(transaction, "test")
+		val writeLock = twoPhaseScheduler.writeLock(transaction, "test")
+		val readLock2 = twoPhaseScheduler.readLock(transaction, "test")
+		
+		Assert.assertNotNull(readLock1)
+		Assert.assertNotNull(readLock2)
+		Assert.assertNotNull(writeLock)
+		Assert.assertEquals(readLock1, readLock2)
+		
+		Assert.assertTrue(readLock1.isReadLock())
+		Assert.assertTrue(readLock2.isReadLock())
+		Assert.assertTrue(writeLock.isWriteLock())
+	}
+	
+	@Test
+	fun oneTransaction_OneDifferentResource_ReadLock_WriteLock_ReadLock() {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val readLock1 = twoPhaseScheduler.readLock(transaction, "test")
+		val writeLock = twoPhaseScheduler.writeLock(transaction, "test")
+		val readLock2 = twoPhaseScheduler.readLock(transaction, "test2")
+		
+		Assert.assertNotNull(readLock1)
+		Assert.assertNotNull(readLock2)
+		Assert.assertNotNull(writeLock)
+		Assert.assertNotEquals(readLock1, readLock2)
+		
+		Assert.assertTrue(readLock1.isReadLock())
+		Assert.assertTrue(readLock2.isReadLock())
+		Assert.assertTrue(writeLock.isWriteLock())
+	}
+	
+	@Test
+	fun oneTransaction_OneResource_WriteLock_ReadLock() {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val writeLock = twoPhaseScheduler.writeLock(transaction, "test")
+		val readLock1 = twoPhaseScheduler.readLock(transaction, "test")
+		
+		Assert.assertNotNull(readLock1)
+		Assert.assertNotNull(writeLock)
+		
+		Assert.assertTrue(readLock1.isReadLock())
+		Assert.assertTrue(writeLock.isWriteLock())
+	}
+	
+	@Test
+	fun twoTransaction_OneResource_WriteLock_ReadLock() {
+		val countDownLatch = CountDownLatch(1)
+		
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.writeLock(transaction1, "test")
+		
+		val thread = thread {
+			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+			println("blocked $transaction2")
+			twoPhaseScheduler.readLock(transaction2, "test")
+			println("finished: $transaction2")
+		}
+		
+		println("holding R: $transaction1")
+		countDownLatch.await(2, TimeUnit.SECONDS)
+		twoPhaseScheduler.releaseLocks(transaction1)
+		println("finished: $transaction1")
+		thread.join()
+	}
 	
 	
 }
