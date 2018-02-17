@@ -28,11 +28,11 @@ class TwoPhaseScheduler(
 				}
 				
 				while (locksTable.hasWriteLock(lock)) {
-					if (isDeadlock()) {
+					val transHasLock = locksTable[lock][0].transaction
+					if (waitForGraphTable.isDeadlock(transaction, transHasLock)) {
 						releaseLocks(transaction)
 						transaction.status = TransactionStatus.ABORT
 					}
-					val transHasLock = locksTable[lock][0].transaction
 					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
@@ -57,11 +57,11 @@ class TwoPhaseScheduler(
 			}
 			locksTable.hasWriteLock(lock) -> {
 				while (locksTable.hasWriteLock(lock)) {
-					if (isDeadlock()) {
-						releaseLocks(transaction)
-						transaction.status = TransactionStatus.ABORT
+					val transHasLock = locksTable[lock].firstOrNull()?.transaction ?: return lock
+					if (waitForGraphTable.isDeadlock(transaction, transHasLock)) {
+						releaseLocks(transHasLock)
+						transHasLock.status = TransactionStatus.ABORT
 					}
-					val transHasLock = locksTable[lock][0].transaction
 					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
@@ -72,16 +72,9 @@ class TwoPhaseScheduler(
 		}
 	}
 	
-	private fun isDeadlock(): Boolean {
-		return false
-	}
-	
 	fun releaseLocks(transaction: Transaction) {
-		locksTable.forEach {
-			if (it.transaction.id == transaction.id) {
-				locksTable -= it
-			}
-		}
+		locksTable.release(transaction)
+		waitForGraphTable.release(transaction)
 	}
 	
 	fun release(lock: Lock) {

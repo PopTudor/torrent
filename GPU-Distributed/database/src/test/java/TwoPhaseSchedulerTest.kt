@@ -1,10 +1,9 @@
+
 import hello.business.*
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runners.Suite
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 @Suite.SuiteClasses
@@ -18,7 +17,7 @@ class TwoPhaseSchedulerTest {
 	fun init() {
 		transactionTable = TransactionsTable()
 		locksTable = LocksTable(transactionTable)
-		waitForGraphTable = WaitForGraphTable()
+		waitForGraphTable = WaitForGraphTable(transactionTable)
 		twoPhaseScheduler = TwoPhaseScheduler(locksTable, waitForGraphTable)
 	}
 	
@@ -242,8 +241,6 @@ class TwoPhaseSchedulerTest {
 	
 	@Test
 	fun twoTransaction_OneResource_WriteLock_ReadLock() {
-		val countDownLatch = CountDownLatch(1)
-		
 		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.writeLock(transaction1, resource)
@@ -256,16 +253,16 @@ class TwoPhaseSchedulerTest {
 		}
 		
 		transaction1.printHolding(resource)
-		countDownLatch.await(2, TimeUnit.SECONDS)
+		Thread.sleep(1000)
+		
 		twoPhaseScheduler.releaseLocks(transaction1)
 		transaction1.printFinish()
 		thread.join()
+		println("-------------")
 	}
 	
 	@Test
 	fun twoTransaction_OneResource_WriteLock_WriteLock() {
-		val countDownLatch = CountDownLatch(1)
-		
 		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.writeLock(transaction1, resource)
@@ -278,16 +275,16 @@ class TwoPhaseSchedulerTest {
 		}
 		
 		transaction1.printHolding(resource)
-		countDownLatch.await(3, TimeUnit.SECONDS)
+		Thread.sleep(1000)
+		
 		twoPhaseScheduler.releaseLocks(transaction1)
 		transaction1.printFinish()
 		thread.join()
+		println("-------------")
 	}
 	
 	@Test
 	fun twoTransaction_OneResource_ReadLock_WriteLock() {
-		val countDownLatch = CountDownLatch(1)
-		
 		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.readLock(transaction1, resource)
@@ -300,9 +297,11 @@ class TwoPhaseSchedulerTest {
 		}
 		
 		transaction1.printHolding(resource)
-		countDownLatch.await(3, TimeUnit.SECONDS)
+		Thread.sleep(1000)
+		
 		twoPhaseScheduler.releaseLocks(transaction1)
 		transaction1.printFinish()
 		thread.join()
+		println("-------------")
 	}
 }

@@ -29,10 +29,6 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 		return locks[lock.resource]?.filter { it.resource == lock.resource } ?: emptyList()
 	}
 	
-	fun forEach(body: (Lock) -> Unit) {
-		locks.values.flatten().forEach(body)
-	}
-	
 	fun isUnlocked(lock: Lock): Boolean {
 		return lock.resource !in locks.keys
 	}
@@ -53,5 +49,14 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 	
 	fun hasWriteLockForTransaction(transaction: Transaction): Boolean {
 		return locks.values.flatten().any { it.type == LockType.WRITE && it.transaction == transaction }
+	}
+	
+	fun release(transaction: Transaction) {
+		locks.values.flatten().forEach {
+			if (it.transaction.id == transaction.id) {
+				this -= it
+			}
+		}
+		
 	}
 }
