@@ -10,7 +10,8 @@ class TwoPhaseScheduler(
 	
 	@Synchronized
 	fun readLock(transaction: Transaction, resource: Any): Lock {
-		val lock = Lock(LockType.READ, resource, resource.toString(), transaction)
+		val table = resource.javaClass.simpleName
+		val lock = Lock(LockType.READ, resource, table, transaction)
 		return when {
 			locksTable.isUnlocked(lock) -> {
 				locksTable += lock
@@ -22,8 +23,8 @@ class TwoPhaseScheduler(
 						releaseLocks(transaction)
 						transaction.status = TransactionStatus.ABORT
 					}
-//					val transHasLock = locksTable[lock].transaction
-//					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
+					val transHasLock = locksTable[lock][0].transaction
+					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
 				lock
@@ -36,8 +37,37 @@ class TwoPhaseScheduler(
 		}
 	}
 	
+	@Synchronized
+	fun writeLock(transaction: Transaction, resource: Any): Lock {
+		val table = resource.javaClass.simpleName
+		val lock = Lock(LockType.WRITE, resource, table, transaction)
+		return when {
+			locksTable.isUnlocked(lock) -> {
+				locksTable += (lock)
+				lock
+			}
+			locksTable.hasWriteLock(lock) -> {
+				while (locksTable.hasWriteLock(lock)) {
+					if (isDeadlock()) {
+						releaseLocks(transaction)
+						transaction.status = TransactionStatus.ABORT
+					}
+					val transHasLock = locksTable[lock][0].transaction
+					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
+					Thread.sleep(100)
+				}
+				lock
+			}
+			locksTable.hasReadLock(lock) -> {
+				locksTable += lock
+				lock
+			}
+			else -> throw IllegalArgumentException("Something is wrong")
+		}
+	}
+	
 	private fun isDeadlock(): Boolean {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+		return false
 	}
 	
 	private fun releaseLocks(transaction: Transaction) {
@@ -47,15 +77,6 @@ class TwoPhaseScheduler(
 			}
 		}
 	}
-	
-//	fun writeLock(transaction: Transaction, resource: Any): WaitFor {
-//		val table = resource.javaClass.simpleName
-//		val lock = Lock(LockType.READ, resource, table, transaction)
-//		when {
-//			locksTable.isUnlocked(lock) -> locksTable.lock(lock)
-//			else -> TODO("wait for unlock")
-//		}
-//	}
 	
 	fun release(lock: Lock) {
 		locksTable -= lock
