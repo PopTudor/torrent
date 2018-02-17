@@ -2,10 +2,12 @@ import hello.business.*
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.junit.runners.Suite
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
+@Suite.SuiteClasses
 class TwoPhaseSchedulerTest {
 	lateinit var locksTable: LocksTable;
 	lateinit var transactionTable: TransactionsTable
@@ -242,20 +244,21 @@ class TwoPhaseSchedulerTest {
 	fun twoTransaction_OneResource_WriteLock_ReadLock() {
 		val countDownLatch = CountDownLatch(1)
 		
+		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.writeLock(transaction1, "test")
+		twoPhaseScheduler.writeLock(transaction1, resource)
 		
 		val thread = thread {
 			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			println("blocked $transaction2")
-			twoPhaseScheduler.readLock(transaction2, "test")
-			println("finished: $transaction2")
+			transaction2.printBlocked()
+			twoPhaseScheduler.readLock(transaction2, resource)
+			transaction2.printFinish()
 		}
 		
-		println("holding R: $transaction1")
+		transaction1.printHolding(resource)
 		countDownLatch.await(2, TimeUnit.SECONDS)
 		twoPhaseScheduler.releaseLocks(transaction1)
-		println("finished: $transaction1")
+		transaction1.printFinish()
 		thread.join()
 	}
 	
@@ -263,20 +266,21 @@ class TwoPhaseSchedulerTest {
 	fun twoTransaction_OneResource_WriteLock_WriteLock() {
 		val countDownLatch = CountDownLatch(1)
 		
+		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.writeLock(transaction1, "test")
+		twoPhaseScheduler.writeLock(transaction1, resource)
 		
 		val thread = thread {
 			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			println("blocked $transaction2")
-			twoPhaseScheduler.writeLock(transaction2, "test")
-			println("finished: $transaction2")
+			transaction2.printBlocked()
+			twoPhaseScheduler.writeLock(transaction2, resource)
+			transaction2.printFinish()
 		}
 		
-		println("holding R: $transaction1")
+		transaction1.printHolding(resource)
 		countDownLatch.await(3, TimeUnit.SECONDS)
 		twoPhaseScheduler.releaseLocks(transaction1)
-		println("finished: $transaction1")
+		transaction1.printFinish()
 		thread.join()
 	}
 	
@@ -284,22 +288,21 @@ class TwoPhaseSchedulerTest {
 	fun twoTransaction_OneResource_ReadLock_WriteLock() {
 		val countDownLatch = CountDownLatch(1)
 		
+		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.readLock(transaction1, "test")
+		twoPhaseScheduler.readLock(transaction1, resource)
 		
 		val thread = thread {
 			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			println("blocked $transaction2")
-			twoPhaseScheduler.writeLock(transaction2, "test")
-			println("finished: $transaction2")
+			transaction2.printBlocked()
+			twoPhaseScheduler.writeLock(transaction2, resource)
+			transaction2.printFinish()
 		}
 		
-		println("holding R: $transaction1")
+		transaction1.printHolding(resource)
 		countDownLatch.await(3, TimeUnit.SECONDS)
 		twoPhaseScheduler.releaseLocks(transaction1)
-		println("finished: $transaction1")
+		transaction1.printFinish()
 		thread.join()
 	}
-	
-	
 }
