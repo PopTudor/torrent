@@ -76,7 +76,7 @@ class TwoPhaseScheduler(
 		return false
 	}
 	
-	public fun releaseLocks(transaction: Transaction) {
+	fun releaseLocks(transaction: Transaction) {
 		locksTable.forEach {
 			if (it.transaction.id == transaction.id) {
 				locksTable -= it

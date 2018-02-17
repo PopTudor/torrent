@@ -258,27 +258,48 @@ class TwoPhaseSchedulerTest {
 		println("finished: $transaction1")
 		thread.join()
 	}
-
-//	@Test
-//	fun twoTransaction_OneResource_WriteLock_WriteLock() {
-//		val countDownLatch = CountDownLatch(1)
-//
-//		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
-//		twoPhaseScheduler.writeLock(transaction1, "test")
-//
-//		val thread = thread {
-//			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-//			println("blocked $transaction2")
-//			twoPhaseScheduler.readLock(transaction2, "test")
-//			println("finished: $transaction2")
-//		}
-//
-//		println("holding R: $transaction1")
-//		countDownLatch.await(2, TimeUnit.SECONDS)
-//		twoPhaseScheduler.releaseLocks(transaction1)
-//		println("finished: $transaction1")
-//		thread.join()
-//	}
+	
+	@Test
+	fun twoTransaction_OneResource_WriteLock_WriteLock() {
+		val countDownLatch = CountDownLatch(1)
+		
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.writeLock(transaction1, "test")
+		
+		val thread = thread {
+			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+			println("blocked $transaction2")
+			twoPhaseScheduler.writeLock(transaction2, "test")
+			println("finished: $transaction2")
+		}
+		
+		println("holding R: $transaction1")
+		countDownLatch.await(3, TimeUnit.SECONDS)
+		twoPhaseScheduler.releaseLocks(transaction1)
+		println("finished: $transaction1")
+		thread.join()
+	}
+	
+	@Test
+	fun twoTransaction_OneResource_ReadLock_WriteLock() {
+		val countDownLatch = CountDownLatch(1)
+		
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.readLock(transaction1, "test")
+		
+		val thread = thread {
+			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+			println("blocked $transaction2")
+			twoPhaseScheduler.writeLock(transaction2, "test")
+			println("finished: $transaction2")
+		}
+		
+		println("holding R: $transaction1")
+		countDownLatch.await(3, TimeUnit.SECONDS)
+		twoPhaseScheduler.releaseLocks(transaction1)
+		println("finished: $transaction1")
+		thread.join()
+	}
 	
 	
 }
