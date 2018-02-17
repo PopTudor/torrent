@@ -10,8 +10,7 @@ class TwoPhaseScheduler(
 	
 	@Synchronized
 	fun readLock(transaction: Transaction, resource: Any): Lock {
-		val table = resource.javaClass.simpleName
-		val lock = Lock(LockType.READ, resource, table, transaction)
+		val lock = Lock(LockType.READ, resource, resource.toString(), transaction)
 		return when {
 			locksTable.isUnlocked(lock) -> {
 				locksTable += lock
@@ -23,8 +22,8 @@ class TwoPhaseScheduler(
 						releaseLocks(transaction)
 						transaction.status = TransactionStatus.ABORT
 					}
-					val transHasLock = locksTable[lock]!!.transaction
-					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
+//					val transHasLock = locksTable[lock].transaction
+//					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
 				lock
