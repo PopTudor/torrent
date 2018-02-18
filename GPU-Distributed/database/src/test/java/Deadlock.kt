@@ -1,3 +1,4 @@
+import hello.AbortException
 import hello.business.*
 import hello.printAcquired
 import hello.printBlocked
@@ -5,6 +6,8 @@ import hello.printFinish
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 class Deadlock {
@@ -24,27 +27,31 @@ class Deadlock {
 	@Ignore("blocks all the tests")
 	@Test
 	fun twoTransaction_OneResource_Deadlock() {
-		val resource1 = "test"
-		val resource2 = "test1"
+		val A = "test"
+		val B = "test1"
 		
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.writeLock(transaction1, resource1)
-		transaction1.printAcquired(resource1)
+		twoPhaseScheduler.writeLock(transaction1, A)
+		transaction1.printAcquired(A)
 		
 		val thread = thread {
-			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			twoPhaseScheduler.writeLock(transaction2, resource2)
-			transaction2.printAcquired(resource2)
-			
-			transaction2.printBlocked()
-			twoPhaseScheduler.writeLock(transaction2, resource1)
-			transaction2.printFinish()
+			try {
+				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+				twoPhaseScheduler.writeLock(transaction2, B)
+				transaction2.printAcquired(B)
+				
+				transaction2.printBlocked()
+				twoPhaseScheduler.writeLock(transaction2, A)
+				transaction2.printFinish()
+			} catch (exception: AbortException) {
+				println(exception.transaction)
+			}
 		}
 		
 		Thread.sleep(30)
-		transaction1.printBlocked()
 		
-		twoPhaseScheduler.writeLock(transaction1, resource2)
+		transaction1.printBlocked()
+		twoPhaseScheduler.writeLock(transaction1, B)
 		
 		transaction1.printFinish()
 		thread.join()
@@ -53,55 +60,83 @@ class Deadlock {
 	@Ignore("blocks all the tests")
 	@Test
 	fun threeTransaction_OneResource_Deadlock() {
-		val resource1 = "test"
-		val resource2 = "test1"
-		val resource3 = "test2"
+		val resource1 = "test1"
+		val resource2 = "test2"
+		val resource3 = "test3"
 		
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.writeLock(transaction1, resource1)
 		transaction1.printAcquired(resource1)
 		
-		val thread = thread {
-			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			twoPhaseScheduler.writeLock(transaction2, resource2)
-			transaction2.printAcquired(resource2)
-			twoPhaseScheduler.writeLock(transaction2, resource3)
-			transaction2.printAcquired(resource2)
-			
-			
-			transaction2.printBlocked()
-			twoPhaseScheduler.writeLock(transaction2, resource1)
-			transaction2.printFinish()
+		val pool = Executors.newFixedThreadPool(3)
+		pool.submit {
+			try {
+				println(Thread.currentThread().name + " ")
+				
+				val transaction = Transaction(status = TransactionStatus.ACTIVE)
+				twoPhaseScheduler.writeLock(transaction, resource2)
+				transaction.printAcquired(resource2)
+				twoPhaseScheduler.writeLock(transaction, resource3)
+				transaction.printAcquired(resource3)
+				twoPhaseScheduler.writeLock(transaction, resource1)
+				transaction.printAcquired(resource1)
+				transaction.printFinish()
+				twoPhaseScheduler.releaseLocks(transaction)
+				
+			} catch (e: AbortException) {
+				println("abort: ${e.transaction}")
+			}
 		}
-		val thread1 = thread {
-			val transaction3 = Transaction(status = TransactionStatus.ACTIVE)
-			twoPhaseScheduler.writeLock(transaction3, resource2)
-			twoPhaseScheduler.writeLock(transaction3, resource3)
-			twoPhaseScheduler.writeLock(transaction3, resource1)
-			transaction3.printAcquired(resource2)
-			
-			transaction3.printBlocked()
-			transaction3.printFinish()
+		pool.submit {
+			try {
+				println(Thread.currentThread().name + " ")
+				
+				val transaction = Transaction(status = TransactionStatus.ACTIVE)
+				twoPhaseScheduler.writeLock(transaction, resource3)
+				transaction.printAcquired(resource3)
+				twoPhaseScheduler.writeLock(transaction, resource2)
+				transaction.printAcquired(resource2)
+				twoPhaseScheduler.writeLock(transaction, resource1)
+				transaction.printAcquired(resource1)
+				transaction.printFinish()
+				twoPhaseScheduler.releaseLocks(transaction)
+			} catch (e: AbortException) {
+				println("abort: ${e.transaction}")
+			}
 		}
-		val thread2 = thread {
-			val transaction3 = Transaction(status = TransactionStatus.ACTIVE)
-			twoPhaseScheduler.writeLock(transaction3, resource1)
-			twoPhaseScheduler.writeLock(transaction3, resource2)
-			twoPhaseScheduler.writeLock(transaction3, resource3)
-			transaction3.printAcquired(resource2)
-			
-			transaction3.printBlocked()
-			transaction3.printFinish()
+		pool.submit {
+			try {
+				println(Thread.currentThread().name + " ")
+				val transaction = Transaction(status = TransactionStatus.ACTIVE)
+				twoPhaseScheduler.writeLock(transaction, resource1)
+				transaction.printAcquired(resource1)
+				twoPhaseScheduler.writeLock(transaction, resource2)
+				transaction.printAcquired(resource2)
+				twoPhaseScheduler.writeLock(transaction, resource3)
+				transaction.printAcquired(resource3)
+				transaction.printFinish()
+				twoPhaseScheduler.releaseLocks(transaction)
+				
+			} catch (e: AbortException) {
+				println("abort: ${e.transaction}")
+			}
 		}
 		
 		Thread.sleep(30)
 		transaction1.printBlocked()
-		
-		twoPhaseScheduler.writeLock(transaction1, resource2)
+		try {
+			twoPhaseScheduler.writeLock(transaction1, resource2)
+			twoPhaseScheduler.writeLock(transaction1, resource3)
+			Thread.sleep(1000)
+			twoPhaseScheduler.releaseLocks(transaction1)
+			pool.shutdown()
+		} catch (e: AbortException) {
+			println("abort: ${e.transaction}")
+			pool.shutdown()
+		}
 		
 		transaction1.printFinish()
-		thread.join()
-		thread1.join()
-		thread2.join()
+		pool.awaitTermination(10, TimeUnit.SECONDS)
+		
 	}
 }
