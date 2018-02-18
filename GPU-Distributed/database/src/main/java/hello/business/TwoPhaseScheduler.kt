@@ -29,13 +29,14 @@ class TwoPhaseScheduler(
 				
 				while (locksTable.hasWriteLock(lock)) {
 					val transHasLock = locksTable[lock][0].transaction
-					if (waitForGraphTable.isDeadlock(transaction, transHasLock)) {
-						releaseLocks(transaction)
+					if (waitForGraphTable.isDeadlock(transHasLock, transaction)) {
 						transaction.status = TransactionStatus.ABORT
+						releaseLocks(transaction)
 					}
 					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
 					Thread.sleep(100)
 				}
+				locksTable += lock
 				lock
 			}
 			else -> throw IllegalArgumentException()
@@ -57,12 +58,13 @@ class TwoPhaseScheduler(
 			}
 			locksTable.hasWriteLock(lock) -> {
 				while (locksTable.hasWriteLock(lock)) {
-					val transHasLock = locksTable[lock].firstOrNull()?.transaction ?: return lock
-					if (waitForGraphTable.isDeadlock(transaction, transHasLock)) {
-						releaseLocks(transHasLock)
-						transHasLock.status = TransactionStatus.ABORT
+					val transactionHasLock = locksTable[lock].firstOrNull()?.transaction ?: return lock
+					if (waitForGraphTable.isDeadlock(transaction, transactionHasLock)) {
+						transactionHasLock.status = TransactionStatus.ABORT
+						releaseLocks(transactionHasLock)
 					}
-					waitForGraphTable += WaitFor(lock, transHasLock, transaction)
+					
+					waitForGraphTable += WaitFor(lock, transactionHasLock, transaction)
 					Thread.sleep(100)
 				}
 				locksTable += lock

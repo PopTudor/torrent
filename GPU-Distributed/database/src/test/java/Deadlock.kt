@@ -1,4 +1,7 @@
 import hello.business.*
+import hello.printAcquired
+import hello.printBlocked
+import hello.printFinish
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -38,12 +41,10 @@ class Deadlock {
 			transaction2.printFinish()
 		}
 		
-		transaction1.printHolding(resource1)
-		Thread.sleep(3000)
+		Thread.sleep(30)
 		transaction1.printBlocked()
 		
 		twoPhaseScheduler.writeLock(transaction1, resource2)
-		twoPhaseScheduler.releaseLocks(transaction1)
 		
 		transaction1.printFinish()
 		thread.join()

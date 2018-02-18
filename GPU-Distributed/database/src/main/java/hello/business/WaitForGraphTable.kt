@@ -7,19 +7,14 @@ import java.util.*
 class WaitForGraphTable(
 		val transactionsTable: TransactionsTable
 ) {
-	private val waitForList = Collections.synchronizedList(mutableListOf<WaitFor>())
+	private val waitForList = Collections.synchronizedSet(mutableSetOf<WaitFor>())
 	
 	operator fun plusAssign(waitFor: WaitFor) {
 		waitForList += waitFor
 	}
 	
-	fun isDeadlock(transactionWaitsLock: Transaction, transactionHasLock: Transaction): Boolean {
-		for (wait in waitForList) {
-			if (wait.transHasLock.id != transactionWaitsLock.id && transactionHasLock.id != wait.transWaitsLock.id) {
-				return true
-			}
-		}
-		return false;
+	fun isDeadlock(transactionHasLock: Transaction, transactionWaitsLock: Transaction): Boolean {
+		return waitForList.any { transactionHasLock.id == it.transWaitsLock.id && transactionWaitsLock.id == it.transHasLock.id }
 	}
 	
 	fun release(transaction: Transaction) {
