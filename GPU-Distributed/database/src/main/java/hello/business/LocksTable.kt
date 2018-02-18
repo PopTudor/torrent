@@ -48,7 +48,7 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 	}
 	
 	fun hasWriteLockForTransaction(transaction: Transaction): Boolean {
-		return locks.values.flatten().any { it.type == LockType.WRITE && it.transaction == transaction }
+		return locks.values.flatten().any { it.type == LockType.WRITE && it.transaction.id == transaction.id }
 	}
 	
 	@Synchronized

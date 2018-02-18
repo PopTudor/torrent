@@ -33,7 +33,7 @@ class TwoPhaseScheduler(
 						transaction.status = TransactionStatus.ABORT
 						releaseLocks(transaction)
 					}
-					waitForGraphTable += WaitFor(lock, transactionHasLock, transaction)
+					waitForGraphTable += Node(lock, transactionHasLock, transaction)
 					Thread.sleep(100)
 				}
 				locksTable += lock
@@ -59,7 +59,7 @@ class TwoPhaseScheduler(
 			locksTable.hasWriteLock(lock) -> {
 				while (locksTable.hasWriteLock(lock)) {
 					val transactionHasLock = locksTable[lock].firstOrNull()?.transaction ?: return lock
-					waitForGraphTable += WaitFor(lock, transaction, transactionHasLock)
+					waitForGraphTable += Node(lock, transaction, transactionHasLock)
 					
 					if (waitForGraphTable.isDeadlock(transaction, transactionHasLock)) {
 						transaction.status = TransactionStatus.ABORT
@@ -68,7 +68,7 @@ class TwoPhaseScheduler(
 						throw hello.AbortException(transaction)
 					}
 					
-					Thread.sleep(100)
+					Thread.yield()
 				}
 				locksTable += lock
 				lock

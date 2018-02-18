@@ -8,18 +8,29 @@ import java.util.*
 class WaitForGraphTable(
 		val transactionsTable: TransactionsTable
 ) {
-	private val graph = Collections.synchronizedSet(mutableSetOf<WaitFor>())
+	private val graph = Collections.synchronizedSet(mutableSetOf<Node>())
 	
-	operator fun plusAssign(waitFor: WaitFor) {
-		graph += waitFor
+	operator fun plusAssign(node: Node) {
+		graph += node
 	}
 	
+	/**
+	 * 1  2
+	 * 2  1
+	 * 1  3
+	 * 1 = [2,3]
+	 * 2 = [1]
+	 * ---------
+	 * 1  2
+	 * 2
+	 * 1 = [2]
+	 * 2 = []
+	 */
 	@Synchronized
-	fun isDeadlock(transaction: Transaction, transactionHasLock: Transaction): Boolean {
-		val transaction1WaitFor = graph.filter { it.transWaitsLock.id == transaction.id }.map { it.transHasLock }
+	fun isDeadlock(waitingTrans: Transaction, transactionHasLock: Transaction): Boolean {
+		val transaction1WaitFor = graph.filter { it.transWaitsLock.id == waitingTrans.id }.map { it.transHasLock }
 		val transaction2WaitFor = graph.filter { it.transHasLock.id == transactionHasLock.id }.map { it.transWaitsLock }
-		val isDeadlock = transaction1WaitFor.contains(transactionHasLock) && transaction2WaitFor.contains(transaction)
-		return isDeadlock
+		return transaction1WaitFor.contains(transactionHasLock) && transaction2WaitFor.contains(waitingTrans)
 	}
 	
 	@Synchronized

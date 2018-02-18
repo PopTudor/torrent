@@ -1,3 +1,4 @@
+
 import hello.AbortException
 import hello.business.*
 import hello.printAcquired
@@ -34,6 +35,7 @@ class Deadlock {
 		twoPhaseScheduler.writeLock(transaction1, A)
 		transaction1.printAcquired(A)
 		
+		
 		val thread = thread {
 			try {
 				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
@@ -42,13 +44,51 @@ class Deadlock {
 				
 				transaction2.printBlocked()
 				twoPhaseScheduler.writeLock(transaction2, A)
+				twoPhaseScheduler.releaseLocks(transaction2)
 				transaction2.printFinish()
 			} catch (exception: AbortException) {
 				println(exception.transaction)
+				twoPhaseScheduler.releaseLocks(exception.transaction)
+			}
+		}
+		Thread.sleep(100)
+		transaction1.printBlocked()
+		twoPhaseScheduler.writeLock(transaction1, B)
+		twoPhaseScheduler.releaseLocks(transaction1)
+		transaction1.printFinish()
+		thread.join()
+		
+	}
+	
+	/**
+	 * 1  2
+	 * 2
+	 * 1 = [2]
+	 * 2 = []
+	 */
+	@Ignore("blocks all the tests")
+	@Test
+	fun twoTransaction_OneResource_NotDeadlock() {
+		val A = "test"
+		val B = "test1"
+		
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.writeLock(transaction1, A)
+		transaction1.printAcquired(A)
+		
+		val thread = thread {
+			try {
+				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+				twoPhaseScheduler.writeLock(transaction2, B)
+				transaction2.printAcquired(B)
+				println("trans2 finished")
+				twoPhaseScheduler.releaseLocks(transaction2)
+			} catch (exception: AbortException) {
+				println("trans2 abort" + exception.transaction)
 			}
 		}
 		
-		Thread.sleep(30)
+		Thread.sleep(300)
 		
 		transaction1.printBlocked()
 		twoPhaseScheduler.writeLock(transaction1, B)
@@ -105,6 +145,7 @@ class Deadlock {
 			}
 		}
 		pool.submit {
+			// no deadlock
 			try {
 				println(Thread.currentThread().name + " transaction4")
 				val res4 = "test4"
