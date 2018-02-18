@@ -24,7 +24,6 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 		}
 	}
 	
-	
 	operator fun get(lock: Lock): List<Lock> {
 		return locks[lock.resource]?.filter { it.resource == lock.resource } ?: emptyList()
 	}
@@ -42,6 +41,7 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 		transactionsTable += lock.transaction
 	}
 	
+	@Synchronized
 	operator fun minusAssign(lock: Lock) {
 		locks -= lock.resource
 		transactionsTable -= lock.transaction
