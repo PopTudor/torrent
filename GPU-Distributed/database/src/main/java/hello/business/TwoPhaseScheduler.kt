@@ -1,5 +1,6 @@
 package hello.business
 
+import hello.AbortException
 import org.springframework.stereotype.Service
 
 @Service
@@ -23,21 +24,11 @@ class TwoPhaseScheduler(
 			}
 			
 			locksTable.hasWriteLock(lock) -> {
-				if (locksTable.hasWriteLockForTransaction(transaction)) {
-					return lock
+				if (waitForLock(lock, transaction)) return lock
+				else {
+					locksTable += lock
+					lock
 				}
-				
-				while (locksTable.hasWriteLock(lock)) {
-					val transactionHasLock = locksTable[lock][0].transaction
-					if (waitForGraphTable.isDeadlock(transaction, transactionHasLock)) {
-						transaction.status = TransactionStatus.ABORT
-						releaseLocks(transaction)
-					}
-					waitForGraphTable += Node(lock, transactionHasLock, transaction)
-					Thread.sleep(100)
-				}
-				locksTable += lock
-				lock
 			}
 			else -> throw IllegalArgumentException()
 		}
@@ -57,24 +48,32 @@ class TwoPhaseScheduler(
 				lock
 			}
 			locksTable.hasWriteLock(lock) -> {
-				while (locksTable.hasWriteLock(lock)) {
-					val transactionHasLock = locksTable[lock].firstOrNull()?.transaction ?: return lock
-					waitForGraphTable += Node(lock, transaction, transactionHasLock)
-					
-					if (waitForGraphTable.isDeadlock(transaction, transactionHasLock)) {
-						transaction.status = TransactionStatus.ABORT
-						releaseLocks(transaction)
-						println("Deadlock !!")
-						throw hello.AbortException(transaction)
-					}
-					
-					Thread.yield()
+				if (waitForLock(lock, transaction)) return lock
+				else {
+					locksTable += lock
+					lock
 				}
-				locksTable += lock
-				lock
 			}
 			else -> throw IllegalArgumentException("Something is wrong")
 		}
+	}
+	
+	private fun waitForLock(lock: Lock, transaction: Transaction): Boolean {
+		while (locksTable.hasWriteLock(lock)) {
+			val transactionHasLock = locksTable[lock].firstOrNull()?.transaction ?: return true
+			if (transactionHasLock.id == transaction.id) return false
+			waitForGraphTable += Node(lock, transaction, transactionHasLock)
+			
+			if (waitForGraphTable.isDeadlock(transaction, transactionHasLock)) {
+				transaction.status = TransactionStatus.ABORT
+				releaseLocks(transaction)
+				println("Deadlock !!")
+				throw AbortException(transaction)
+			}
+			
+			Thread.yield()
+		}
+		return false
 	}
 	
 	fun releaseLocks(transaction: Transaction) {

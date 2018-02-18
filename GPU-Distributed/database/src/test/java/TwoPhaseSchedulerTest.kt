@@ -1,4 +1,4 @@
-
+import hello.AbortException
 import hello.business.*
 import hello.printBlocked
 import hello.printFinish
@@ -243,16 +243,46 @@ class TwoPhaseSchedulerTest {
 	}
 	
 	@Test
+	fun twoTransaction_OneResource_ReadLock_WriteLock() {
+		val resource = "test"
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.readLock(transaction1, resource)
+		
+		val thread = thread {
+			try {
+				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+				transaction2.printBlocked()
+				twoPhaseScheduler.writeLock(transaction2, resource)
+				transaction2.printFinish()
+			} catch (abort: AbortException) {
+				println("abort: ${abort.transaction}")
+			}
+		}
+		
+		transaction1.printHolding(resource)
+		Thread.sleep(1000)
+		
+		twoPhaseScheduler.releaseLocks(transaction1)
+		transaction1.printFinish()
+		thread.join()
+		println("-------------")
+	}
+	
+	@Test
 	fun twoTransaction_OneResource_WriteLock_ReadLock() {
 		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.writeLock(transaction1, resource)
 		
 		val thread = thread {
-			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			transaction2.printBlocked()
-			twoPhaseScheduler.readLock(transaction2, resource)
-			transaction2.printFinish()
+			try {
+				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+				transaction2.printBlocked()
+				twoPhaseScheduler.readLock(transaction2, resource)
+				transaction2.printFinish()
+			} catch (e: AbortException) {
+				println("abort: ${e.transaction}")
+			}
 		}
 		
 		transaction1.printHolding(resource)
@@ -271,32 +301,14 @@ class TwoPhaseSchedulerTest {
 		twoPhaseScheduler.writeLock(transaction1, resource)
 		
 		val thread = thread {
-			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			transaction2.printBlocked()
-			twoPhaseScheduler.writeLock(transaction2, resource)
-			transaction2.printFinish()
-		}
-		
-		transaction1.printHolding(resource)
-		Thread.sleep(1000)
-		
-		twoPhaseScheduler.releaseLocks(transaction1)
-		transaction1.printFinish()
-		thread.join()
-		println("-------------")
-	}
-	
-	@Test
-	fun twoTransaction_OneResource_ReadLock_WriteLock() {
-		val resource = "test"
-		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.readLock(transaction1, resource)
-		
-		val thread = thread {
-			val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
-			transaction2.printBlocked()
-			twoPhaseScheduler.writeLock(transaction2, resource)
-			transaction2.printFinish()
+			try {
+				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+				transaction2.printBlocked()
+				twoPhaseScheduler.writeLock(transaction2, resource)
+				transaction2.printFinish()
+			} catch (abort: AbortException) {
+				println("abort: ${abort.transaction}")
+			}
 		}
 		
 		transaction1.printHolding(resource)

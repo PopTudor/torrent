@@ -28,6 +28,7 @@ class WaitForGraphTable(
 	 */
 	@Synchronized
 	fun isDeadlock(waitingTrans: Transaction, transactionHasLock: Transaction): Boolean {
+		if (waitingTrans.id == transactionHasLock.id) return false
 		val transaction1WaitFor = graph.filter { it.transWaitsLock.id == waitingTrans.id }.map { it.transHasLock }
 		val transaction2WaitFor = graph.filter { it.transHasLock.id == transactionHasLock.id }.map { it.transWaitsLock }
 		return transaction1WaitFor.contains(transactionHasLock) && transaction2WaitFor.contains(waitingTrans)
