@@ -1,21 +1,19 @@
 package hello.business
 
-import hello.data.account.Account
-
 object TransactionHistory {
-	private val history = mutableListOf<Account>()
+	private val history = mutableListOf<Transaction>()
 	
 	@Synchronized
-	fun add(account: Account) {
-		history += account
+	fun add(transaction: Transaction) {
+		history += transaction
 	}
 	
 	@Synchronized
-	fun remove(account: Account) {
-		history -= account
+	fun remove(transaction: Transaction) {
+		history -= transaction
 	}
 	
-	operator fun plusAssign(account: Account) = add(account)
-	operator fun minusAssign(account: Account) = remove(account)
+	operator fun plusAssign(transaction: Transaction) = add(transaction)
+	operator fun minusAssign(transaction: Transaction) = remove(transaction)
 	
 }

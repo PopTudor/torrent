@@ -106,19 +106,15 @@ class Deadlock {
 		}
 		pool.submit {
 			try {
-				println(Thread.currentThread().name + " ")
+				println(Thread.currentThread().name + " transaction4")
+				val res4 = "test4"
 				val transaction = Transaction(status = TransactionStatus.ACTIVE)
-				twoPhaseScheduler.writeLock(transaction, resource1)
-				transaction.printAcquired(resource1)
-				twoPhaseScheduler.writeLock(transaction, resource2)
-				transaction.printAcquired(resource2)
-				twoPhaseScheduler.writeLock(transaction, resource3)
-				transaction.printAcquired(resource3)
+				twoPhaseScheduler.writeLock(transaction, res4)
+				transaction.printAcquired(res4)
 				transaction.printFinish()
-				twoPhaseScheduler.releaseLocks(transaction)
-				
+				println("end tran4: ${transaction}")
 			} catch (e: AbortException) {
-				println("abort: ${e.transaction}")
+				println("abort tran4: ${e.transaction}")
 			}
 		}
 		

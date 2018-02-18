@@ -2,10 +2,8 @@ package hello.business
 
 data class WaitFor(
 		val lock: Lock,
-		val transHasLock: Transaction,
 		val transWaitsLock: Transaction,
-		var isBeingVisited: Boolean = false,
-		var visited: Boolean = false
+		val transHasLock: Transaction
 ) {
 	fun getNeighbors(): List<Transaction> {
 		return listOf(transHasLock, transWaitsLock)

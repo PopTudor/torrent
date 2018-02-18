@@ -24,12 +24,13 @@ class AccountManagementService(
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		
 		val readLock = twoPhaseScheduler.readLock(transaction, user)
+		readLock.readLock()
 		var account = retrieveUser(user)
 		if (account == null) {
-			twoPhaseScheduler.release(readLock)
+			twoPhaseScheduler.releaseLocks(transaction)
 			return DepositStatus(0.0, "User not found")
 		}
-		TransactionHistory += account
+		TransactionHistory += transaction
 		
 		account.balance += deposit
 		

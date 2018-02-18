@@ -51,6 +51,7 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 		return locks.values.flatten().any { it.type == LockType.WRITE && it.transaction == transaction }
 	}
 	
+	@Synchronized
 	fun release(transaction: Transaction) {
 		locks.values.flatten().forEach {
 			if (it.transaction.id == transaction.id) {
