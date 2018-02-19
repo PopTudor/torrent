@@ -1,30 +1,50 @@
 package hello
 
-import hello.business.Transaction
-import hello.business.TransactionHistory
-import hello.business.TransactionStatus
-import hello.business.TwoPhaseScheduler
+import hello.business.*
+import hello.business.command.CreateAccount
 import hello.data.DepositStatus
 import hello.data.account.Account
 import hello.data.account.AccountRepository
-import hello.data.payment.PaymentRepository
 import org.springframework.stereotype.Service
 
 @Service
-class AccountManagementService(
-		val accountRepository: AccountRepository,
-		val paymentRepository: PaymentRepository,
-		val twoPhaseScheduler: TwoPhaseScheduler
+class AccountManagerService(
+		private val accountRepository: AccountRepository,
+		private val twoPhaseScheduler: TwoPhaseScheduler,
+		private val transactionManager: TransactionManager
 ) {
 	init {
 //		accountRepository.save(Account("tudor","parola",100.0))
 	}
 	
+	
+	fun createAccount(account: Account): Account? {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		try {
+			twoPhaseScheduler.writeLock(transaction, account)
+			
+			val createUser = CreateAccount(accountRepository, account)
+			transactionManager.addCommands(transaction, createUser)
+			transactionManager.commit(transaction)
+			
+			twoPhaseScheduler.releaseLocks(transaction)
+			transaction.status = TransactionStatus.COMMIT
+		} catch (abortException: AbortException) {
+			transactionManager.rollback(transaction)
+			twoPhaseScheduler.releaseLocks(transaction)
+			transaction.status = TransactionStatus.ABORT
+		}
+		when {
+			transaction.status == TransactionStatus.COMMIT -> return account
+			transaction.status == TransactionStatus.ABORT -> return null
+			else -> throw RuntimeException("this should not happen")
+		}
+	}
+	
 	fun deposit(deposit: Double, user: String): DepositStatus {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.readLock(transaction, user)
 		
-		val readLock = twoPhaseScheduler.readLock(transaction, user)
-		readLock.readLock()
 		var account = retrieveUser(user)
 		if (account == null) {
 			twoPhaseScheduler.releaseLocks(transaction)
@@ -33,7 +53,7 @@ class AccountManagementService(
 		TransactionHistory += transaction
 		
 		account.balance += deposit
-		
+
 //		twoPhaseScheduler.writeLock(transaction, account)
 		saveAccount(account)
 //		updateAccountHistory(account)

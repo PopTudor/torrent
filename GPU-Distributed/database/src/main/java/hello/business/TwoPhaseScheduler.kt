@@ -80,11 +80,4 @@ class TwoPhaseScheduler(
 		waitForGraphTable.release(transaction)
 		locksTable.release(transaction)
 	}
-	
-	fun release(lock: Lock) {
-		locksTable -= lock
-	}
-	
 }
-
-enum class LockStatus { SUCCESS, FAIL }

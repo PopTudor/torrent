@@ -60,4 +60,6 @@ class LocksTable(val transactionsTable: TransactionsTable) {
 		}
 		
 	}
+	
+	fun isEmpty() = locks.isEmpty()
 }

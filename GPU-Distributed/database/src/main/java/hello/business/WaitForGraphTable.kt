@@ -39,4 +39,8 @@ class WaitForGraphTable(
 		graph.removeIf { it.transWaitsLock.id == transaction.id }
 		transactionsTable -= transaction
 	}
+	
+	fun isEmpty(): Boolean {
+		return graph.isEmpty()
+	}
 }

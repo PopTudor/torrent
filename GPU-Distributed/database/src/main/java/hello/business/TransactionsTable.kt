@@ -19,4 +19,6 @@ class TransactionsTable {
 	operator fun get(transaction: Transaction): Transaction? {
 		return transactions.find { it == transaction }
 	}
+	
+	fun isEmpty() = transactions.isEmpty()
 }

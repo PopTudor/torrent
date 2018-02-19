@@ -16,6 +16,6 @@ data class Account(
 ) : Serializable {
 	@javax.persistence.Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	val id: Long? = null
+	var id: Long? = null
 	
 }
