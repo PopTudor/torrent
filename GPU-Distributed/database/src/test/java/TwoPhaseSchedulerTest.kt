@@ -1,8 +1,5 @@
-import hello.AbortException
+import hello.*
 import hello.business.*
-import hello.printBlocked
-import hello.printFinish
-import hello.printHolding
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -299,7 +296,7 @@ class TwoPhaseSchedulerTest {
 		val resource = "test"
 		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
 		twoPhaseScheduler.writeLock(transaction1, resource)
-		
+		transaction1.printAcquired(resource)
 		val thread = thread {
 			try {
 				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)

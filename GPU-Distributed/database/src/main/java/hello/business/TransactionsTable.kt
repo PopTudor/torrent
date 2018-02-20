@@ -5,7 +5,7 @@ import java.util.*
 
 @Service
 class TransactionsTable {
-	private val transactions = Collections.synchronizedList(mutableListOf<Transaction>())
+	private val transactions = Collections.synchronizedSet(mutableSetOf<Transaction>())
 	
 	
 	operator fun plusAssign(transaction: Transaction) {
@@ -21,4 +21,8 @@ class TransactionsTable {
 	}
 	
 	fun isEmpty() = transactions.isEmpty()
+	
+	fun size() = transactions.size
+	
+	fun contains(transaction: Transaction) = transactions.contains(transaction)
 }

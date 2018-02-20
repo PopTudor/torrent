@@ -9,7 +9,6 @@ class TwoPhaseScheduler(
 		private val waitForGraphTable: WaitForGraphTable
 ) {
 	
-	@Synchronized
 	fun readLock(transaction: Transaction, resource: Any): Lock {
 		val table = resource.javaClass.simpleName
 		val lock = Lock(LockType.READ, resource, table, transaction)
@@ -34,7 +33,6 @@ class TwoPhaseScheduler(
 		}
 	}
 	
-	@Synchronized
 	fun writeLock(transaction: Transaction, resource: Any): Lock {
 		val table = resource.javaClass.simpleName
 		val lock = Lock(LockType.WRITE, resource, table, transaction)
@@ -60,6 +58,7 @@ class TwoPhaseScheduler(
 	
 	private fun waitForLock(lock: Lock, transaction: Transaction): Boolean {
 		while (locksTable.hasWriteLock(lock)) {
+			locksTable += lock
 			val transactionHasLock = locksTable[lock].firstOrNull()?.transaction ?: return true
 			if (transactionHasLock.id == transaction.id) return false
 			waitForGraphTable += Node(lock, transaction, transactionHasLock)
@@ -71,7 +70,7 @@ class TwoPhaseScheduler(
 				throw AbortException(transaction)
 			}
 			
-			Thread.sleep(30)
+			Thread.sleep(300)
 		}
 		return false
 	}

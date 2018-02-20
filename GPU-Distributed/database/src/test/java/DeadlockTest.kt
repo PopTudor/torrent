@@ -26,8 +26,8 @@ class DeadlockTest {
 	}
 	
 	@Ignore("blocks all the tests")
-	@Test
-	fun twoTransaction_OneResource_Deadlock() {
+	@Test(expected = AbortException::class)
+	fun twoTransaction_TwoResource_Deadlock() {
 		val A = "test"
 		val B = "test1"
 		
@@ -68,7 +68,7 @@ class DeadlockTest {
 	 */
 	@Ignore("blocks all the tests")
 	@Test
-	fun twoTransaction_OneResource_NotDeadlock() {
+	fun twoTransaction_TwoResource_NotDeadlock() {
 		val A = "test"
 		val B = "test1"
 		
@@ -82,7 +82,6 @@ class DeadlockTest {
 				twoPhaseScheduler.writeLock(transaction2, B)
 				transaction2.printAcquired(B)
 				println("trans2 finished")
-				Thread.sleep(50)
 				twoPhaseScheduler.releaseLocks(transaction2)
 			} catch (exception: AbortException) {
 				println("trans2 abort" + exception.transaction)
@@ -93,14 +92,47 @@ class DeadlockTest {
 		
 		transaction1.printBlocked()
 		twoPhaseScheduler.writeLock(transaction1, B)
-		
 		transaction1.printFinish()
+		twoPhaseScheduler.releaseLocks(transaction1)
+		thread.join()
+	}
+	
+	/**
+	 * 1  2
+	 * 2
+	 * 1 = [2]
+	 * 2 = []
+	 */
+	@Ignore("blocks all the tests")
+	@Test
+	fun twoTransaction_twoResource_WaitFor_T1_toFinish() {
+		val A = "test"
+		
+		val transaction1 = Transaction(status = TransactionStatus.ACTIVE)
+		twoPhaseScheduler.writeLock(transaction1, A)
+		transaction1.printAcquired(A)
+		
+		val thread = thread {
+			try {
+				val transaction2 = Transaction(status = TransactionStatus.ACTIVE)
+				transaction2.printBlocked()
+				twoPhaseScheduler.writeLock(transaction2, A)
+				transaction2.printAcquired(A)
+				println("trans2 finished")
+				twoPhaseScheduler.releaseLocks(transaction2)
+			} catch (exception: AbortException) {
+				println("trans2 abort" + exception.transaction)
+			}
+		}
+		Thread.sleep(300)
+		transaction1.printFinish()
+		twoPhaseScheduler.releaseLocks(transaction1)
 		thread.join()
 	}
 	
 	@Ignore("blocks all the tests")
 	@Test
-	fun threeTransaction_OneResource_Deadlock() {
+	fun threeTransaction_ThreeResource_Deadlock() {
 		val resource1 = "test1"
 		val resource2 = "test2"
 		val resource3 = "test3"

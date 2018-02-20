@@ -2,7 +2,7 @@ import hello.data.account.Account
 import hello.data.account.AccountRepository
 
 class AccountRepositoryMock : AccountRepository {
-	private val table = mutableSetOf<Account?>()
+	private val table = mutableListOf<Account?>()
 	
 	override fun findByName(name: String?): MutableList<Account> {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -14,6 +14,7 @@ class AccountRepositoryMock : AccountRepository {
 		return entity
 	}
 	
+	fun size() = table.size
 	override fun <S : Account?> save(entities: MutableIterable<S>?): MutableIterable<S> {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
@@ -53,4 +54,5 @@ class AccountRepositoryMock : AccountRepository {
 	override fun delete(entities: MutableIterable<Account>?) {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
+	
 }

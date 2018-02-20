@@ -1,7 +1,11 @@
 package hello
 
-import hello.business.*
+import hello.business.Transaction
+import hello.business.TransactionManager
+import hello.business.TransactionStatus
+import hello.business.TwoPhaseScheduler
 import hello.business.command.CreateAccount
+import hello.business.command.GetAccount
 import hello.data.DepositStatus
 import hello.data.account.Account
 import hello.data.account.AccountRepository
@@ -21,15 +25,16 @@ class AccountManagerService(
 	fun createAccount(account: Account): Account? {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		try {
-			twoPhaseScheduler.writeLock(transaction, account)
-			
 			val createUser = CreateAccount(accountRepository, account)
+			
+			twoPhaseScheduler.writeLock(transaction, account)
 			transactionManager.addCommands(transaction, createUser)
 			transactionManager.commit(transaction)
 			
-			twoPhaseScheduler.releaseLocks(transaction)
+			twoPhaseScheduler.releaseLocks(transaction) // comment to create deadlock by not releasing lock
 			transaction.status = TransactionStatus.COMMIT
 		} catch (abortException: AbortException) {
+			println("rollback create: ${abortException.transaction}")
 			transactionManager.rollback(transaction)
 			twoPhaseScheduler.releaseLocks(transaction)
 			transaction.status = TransactionStatus.ABORT
@@ -37,31 +42,36 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return account
 			transaction.status == TransactionStatus.ABORT -> return null
-			else -> throw RuntimeException("this should not happen")
+			else -> throw RuntimeException("When statement must have an else branch")
 		}
 	}
 	
 	fun deposit(deposit: Double, user: String): DepositStatus {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
-		twoPhaseScheduler.readLock(transaction, user)
-		
-		var account = retrieveUser(user)
-		if (account == null) {
-			twoPhaseScheduler.releaseLocks(transaction)
-			return DepositStatus(0.0, "User not found")
-		}
-		TransactionHistory += transaction
-		
-		account.balance += deposit
+		try {
+			twoPhaseScheduler.readLock(transaction, user)
+			val getUser = GetAccount(accountRepository, user) {
+				if (it == null) throw AbortException(transaction)
+			}
+			
+			transactionManager.addCommands(transaction, getUser)
 
-//		twoPhaseScheduler.writeLock(transaction, account)
-		saveAccount(account)
-//		updateAccountHistory(account)
+//			TransactionHistory += transaction
 //
-		account = retrieveUser(user) ?: return DepositStatus(0.0, "User not found")
+//			account.balance += deposit
+//
+//			twoPhaseScheduler.writeLock(transaction, account)
+//			saveAccount(account)
+//			updateAccountHistory(account)
+
+//			account = retrieveUser(user) ?: return DepositStatus(0.0, "User not found")
+			
+			
+		} catch (abortException: AbortException) {
 		
+		}
 		
-		return DepositStatus(deposit, account.toString())
+		return DepositStatus(deposit, user)
 	}
 	
 	private fun updateLog(account: Account) {
@@ -74,9 +84,5 @@ class AccountManagerService(
 	
 	private fun saveAccount(account: Account) {
 		accountRepository.save(account)
-	}
-	
-	private fun retrieveUser(user: String): Account? {
-		return accountRepository.findByName(user).firstOrNull()
 	}
 }

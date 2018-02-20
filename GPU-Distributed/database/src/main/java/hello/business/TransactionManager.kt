@@ -7,9 +7,9 @@ import java.util.*
 @Service
 class TransactionManager {
 	// transaction -> list Operation
-	val commands = Collections.synchronizedMap(mutableMapOf<Transaction, MutableList<Command>>())
+	private val commands = Collections.synchronizedMap(mutableMapOf<Transaction, MutableList<Command>>())
 	// transaction -> list reverse Operation
-	var executedCommands = Collections.synchronizedMap(mutableMapOf<Transaction, MutableList<Command>>())
+	private var executedCommands = Collections.synchronizedMap(mutableMapOf<Transaction, MutableList<Command>>())
 	
 	fun commit(transaction: Transaction) {
 		executedCommands = mutableMapOf<Transaction, MutableList<Command>>()
@@ -33,6 +33,9 @@ class TransactionManager {
 	}
 	
 	fun rollback(transaction: Transaction) {
-		executedCommands[transaction]?.reversed()?.forEach { it.execute() }
+		executedCommands[transaction]?.reversed()?.forEach {
+			println("rollback: $transaction")
+			it.execute()
+		}
 	}
 }
