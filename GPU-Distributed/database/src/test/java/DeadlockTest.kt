@@ -11,7 +11,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-class Deadlock {
+class DeadlockTest {
 	lateinit var locksTable: LocksTable;
 	lateinit var transactionTable: TransactionsTable
 	lateinit var waitForGraphTable: WaitForGraphTable
@@ -51,7 +51,7 @@ class Deadlock {
 				twoPhaseScheduler.releaseLocks(exception.transaction)
 			}
 		}
-		Thread.sleep(100)
+		Thread.sleep(10)
 		transaction1.printBlocked()
 		twoPhaseScheduler.writeLock(transaction1, B)
 		twoPhaseScheduler.releaseLocks(transaction1)
@@ -82,13 +82,14 @@ class Deadlock {
 				twoPhaseScheduler.writeLock(transaction2, B)
 				transaction2.printAcquired(B)
 				println("trans2 finished")
+				Thread.sleep(50)
 				twoPhaseScheduler.releaseLocks(transaction2)
 			} catch (exception: AbortException) {
 				println("trans2 abort" + exception.transaction)
 			}
 		}
 		
-		Thread.sleep(300)
+		Thread.sleep(30)
 		
 		transaction1.printBlocked()
 		twoPhaseScheduler.writeLock(transaction1, B)

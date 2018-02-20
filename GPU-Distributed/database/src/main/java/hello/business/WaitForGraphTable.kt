@@ -27,11 +27,11 @@ class WaitForGraphTable(
 	 * 2 = []
 	 */
 	@Synchronized
-	fun isDeadlock(waitingTrans: Transaction, transactionHasLock: Transaction): Boolean {
-		if (waitingTrans.id == transactionHasLock.id) return false
-		val transaction1WaitFor = graph.filter { it.transWaitsLock.id == waitingTrans.id }.map { it.transHasLock }
-		val transaction2WaitFor = graph.filter { it.transHasLock.id == transactionHasLock.id }.map { it.transWaitsLock }
-		return transaction1WaitFor.contains(transactionHasLock) && transaction2WaitFor.contains(waitingTrans)
+	fun isDeadlock(waitForTrans: Transaction, hasLockTrans: Transaction): Boolean {
+		if (waitForTrans.id == hasLockTrans.id) return false
+		val transaction1WaitFor = graph.filter { it.transWaitsLock.id == waitForTrans.id }.map { it.transHasLock }
+		val transaction2WaitFor = graph.filter { it.transHasLock.id == hasLockTrans.id }.map { it.transWaitsLock }
+		return transaction1WaitFor.contains(hasLockTrans) && transaction2WaitFor.contains(waitForTrans)
 	}
 	
 	@Synchronized

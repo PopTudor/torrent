@@ -71,7 +71,7 @@ class TwoPhaseScheduler(
 				throw AbortException(transaction)
 			}
 			
-			Thread.yield()
+			Thread.sleep(30)
 		}
 		return false
 	}
