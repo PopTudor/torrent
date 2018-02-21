@@ -8,8 +8,8 @@ import javax.persistence.*
 @Embeddable
 @Table(name="account")
 data class Account(
-		val name: String = "",
-		val password: String = "",
+		var name: String = "",
+		var password: String = "",
 		var balance: Double = 0.0
 ) : Serializable {
 	@javax.persistence.Id
