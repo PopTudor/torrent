@@ -33,7 +33,10 @@ class AccountManagerService(
 			twoPhaseScheduler.releaseLocks(transaction) // comment to create deadlock by not releasing lock
 			transaction.status = TransactionStatus.COMMIT
 		} catch (abortException: AbortException) {
-			println("rollback create: ${abortException.transaction}")
+			transactionManagerCommands.rollback(transaction)
+			twoPhaseScheduler.releaseLocks(transaction)
+			transaction.status = TransactionStatus.ABORT
+		} catch (exception: Exception) {
 			transactionManagerCommands.rollback(transaction)
 			twoPhaseScheduler.releaseLocks(transaction)
 			transaction.status = TransactionStatus.ABORT

@@ -18,11 +18,16 @@ open class TransactionManagerCommands {
 		
 		for (command in commandList) {
 			println("executing: ${command.javaClass}")
-			command.execute()
 			val reverseCommand = command.reverseCommand
 			if (reverseCommand != null) {
-				executedCommands[transaction]?.add(reverseCommand)
+				if (executedCommands[transaction] == null) {
+					executedCommands[transaction] = mutableListOf(reverseCommand)
+					
+				} else {
+					executedCommands[transaction]!! += reverseCommand
+				}
 			}
+			command.execute()
 		}
 	}
 	
