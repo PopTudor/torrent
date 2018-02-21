@@ -104,41 +104,49 @@ class AccountManagerService(
 			else -> return null
 		}
 	}
-
-//	fun withdraw(deposit: Double, user: String): DepositStatus? {
-//		val transaction = Transaction(status = TransactionStatus.ACTIVE)
-//		try {
-//			if (deposit < 0 || user.isBlank()) return DepositStatus(deposit, "Could not be withdrawn from $user")
-//
-//			twoPhaseScheduler.readLock(transaction, user)
-//			val getUser = GetAccountCommand(accountRepository, user) { account ->
-//				if (account == null) throw AbortException(transaction)
-//				val backupAccount = account.copy()
-//
-//				account.balance -= deposit
-//				val withdrawnAcc = UpdateAccount(accountRepository, account)
-//				withdrawnAcc.reverseCommand = UndoUpdateAccount(accountRepository, backupAccount)
-//
-//				twoPhaseScheduler.writeLock(transaction, account)
-//				transactionManagerCommands.addCommands(transaction, withdrawnAcc)
-//				transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, withdrawnAcc))
-//				transactionManagerCommands.commit(transaction)
-//			}
-//			transactionManagerCommands.addCommands(transaction, getUser)
-//			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, getUser))
-//			transactionManagerCommands.commit(transaction)
-//
-//			twoPhaseScheduler.releaseLocks(transaction)
-//			transaction.status = TransactionStatus.COMMIT
-//		} catch (abortException: AbortException) {
-//			abort(abortException.transaction)
-//		}
-//		when {
-//			transaction.status == TransactionStatus.COMMIT -> return DepositStatus(deposit, user)
-//			transaction.status == TransactionStatus.ABORT -> return DepositStatus(0.0, "Could not be withdrawn")
-//			else -> return null
-//		}
-//	}
+	
+	fun withdraw(withdraw: Double, user: String): DepositStatus? {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		try {
+			if (withdraw < 0 || user.isBlank()) return DepositStatus(withdraw, "Could not be withdrawn from $user")
+			
+			twoPhaseScheduler.readLock(transaction, user)
+			val getAccountCommand = GetAccountCommand(accountRepository, user)
+			transactionManagerCommands.addCommands(transaction, getAccountCommand)
+			transactionManagerCommands.addCommands(transaction, CreateHistoryCommand(historyRepository, transaction, getAccountCommand))
+			transactionManagerCommands.commit(transaction)
+			
+			val dbAccount = getAccountCommand.resultAccount ?: throw AbortException(transaction)
+			val backupAccount = dbAccount.copy()
+			
+			dbAccount.balance -= withdraw
+			
+			val withdrawnAcc = UpdateAccount(accountRepository, dbAccount)
+			withdrawnAcc.reverseCommand = UndoUpdateAccount(accountRepository, backupAccount)
+			
+			twoPhaseScheduler.writeLock(transaction, dbAccount)
+			transactionManagerCommands.addCommands(transaction, withdrawnAcc)
+			transactionManagerCommands.addCommands(transaction, CreateHistoryCommand(historyRepository, transaction, withdrawnAcc))
+			transactionManagerCommands.commit(transaction)
+			
+			if (dbAccount.balance < 0) throw AbortException(transaction)
+			//rollback when negative
+			val overwithdrawn = getAccountCommand.resultAccount ?: throw AbortException(transaction)
+			if (overwithdrawn.balance < 0) {
+				throw AbortException(transaction)
+			}
+			
+			twoPhaseScheduler.releaseLocks(transaction)
+			transaction.status = TransactionStatus.COMMIT
+		} catch (abortException: AbortException) {
+			abort(abortException.transaction)
+		}
+		when {
+			transaction.status == TransactionStatus.COMMIT -> return DepositStatus(withdraw, user)
+			transaction.status == TransactionStatus.ABORT -> return DepositStatus(0.0, "Could not be withdrawn")
+			else -> return null
+		}
+	}
 
 //	fun createOrder(order: Order): OrderStatus? {
 //		val transaction = Transaction(status = TransactionStatus.ACTIVE)

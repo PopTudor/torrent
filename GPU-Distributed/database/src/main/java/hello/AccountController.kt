@@ -3,6 +3,7 @@ package hello
 import hello.data.account.Account
 import hello.data.account.Deposit
 import hello.data.account.DepositStatus
+import hello.data.account.Withdraw
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -17,6 +18,13 @@ class AccountController(val accountManagerService: AccountManagerService) {
 		if (deposit.deposit <= 0) return DepositStatus(0.0, "$deposit was added to your user")
 		
 		return accountManagerService.deposit(deposit.deposit, deposit.user)
+	}
+	
+	@PostMapping("/withdraw")
+	fun withdraw(@RequestBody withdraw: Withdraw): DepositStatus? {
+		if (withdraw.amount <= 0) return DepositStatus(0.0, "could not withdraw: $withdraw")
+		
+		return accountManagerService.withdraw(withdraw.amount, withdraw.user)
 	}
 	
 	@PostMapping("/createAccount")

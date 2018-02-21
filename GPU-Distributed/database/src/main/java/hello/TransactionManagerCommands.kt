@@ -13,11 +13,11 @@ open class TransactionManagerCommands {
 	private var executedCommands = Collections.synchronizedMap(mutableMapOf<Transaction, MutableList<Command>>())
 	
 	fun commit(transaction: Transaction) {
-		executedCommands = mutableMapOf<Transaction, MutableList<Command>>()
 		val commandList = commands[transaction] ?: emptyList<Command>()
 		
 		for (command in commandList) {
 			println("executing: ${command.javaClass}")
+			command.execute()
 			val reverseCommand = command.reverseCommand
 			if (reverseCommand != null) {
 				if (executedCommands[transaction] == null) {
@@ -27,7 +27,6 @@ open class TransactionManagerCommands {
 					executedCommands[transaction]!! += reverseCommand
 				}
 			}
-			command.execute()
 		}
 	}
 	
@@ -43,5 +42,6 @@ open class TransactionManagerCommands {
 			println("rollback: $transaction")
 			it.execute()
 		}
+		executedCommands[transaction]?.clear()
 	}
 }
