@@ -30,6 +30,7 @@ class AccountManagerService(
 			
 			twoPhaseScheduler.writeLock(transaction, account)
 			transactionManagerCommands.addCommands(transaction, createUser)
+			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, account))
 			transactionManagerCommands.commit(transaction)
 			
 			twoPhaseScheduler.releaseLocks(transaction) // comment to create deadlock by not releasing lock
@@ -83,11 +84,11 @@ class AccountManagerService(
 				
 				twoPhaseScheduler.writeLock(transaction, account)
 				transactionManagerCommands.addCommands(transaction, depositAcc)
-				transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, depositAcc))
+				transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, depositAcc))
 				transactionManagerCommands.commit(transaction)
 			}
 			transactionManagerCommands.addCommands(transaction, dbUser)
-			transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, dbUser))
+			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, dbUser))
 			transactionManagerCommands.commit(transaction)
 			
 			twoPhaseScheduler.releaseLocks(transaction)
@@ -118,11 +119,11 @@ class AccountManagerService(
 				
 				twoPhaseScheduler.writeLock(transaction, account)
 				transactionManagerCommands.addCommands(transaction, withdrawnAcc)
-				transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, withdrawnAcc))
+				transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, withdrawnAcc))
 				transactionManagerCommands.commit(transaction)
 			}
 			transactionManagerCommands.addCommands(transaction, getUser)
-			transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, getUser))
+			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, getUser))
 			transactionManagerCommands.commit(transaction)
 			
 			twoPhaseScheduler.releaseLocks(transaction)
@@ -152,11 +153,11 @@ class AccountManagerService(
 				
 				twoPhaseScheduler.writeLock(transaction, account1)
 				transactionManagerCommands.addCommands(transaction, accToSave)
-				transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, account1))
+				transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, account1))
 				transactionManagerCommands.commit(transaction)
 			}
 			transactionManagerCommands.addCommands(transaction, dbUser)
-			transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, dbUser))
+			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, dbUser))
 			transactionManagerCommands.commit(transaction)
 			
 			twoPhaseScheduler.releaseLocks(transaction)
@@ -196,13 +197,13 @@ class AccountManagerService(
 					twoPhaseScheduler.writeLock(transaction, account1)
 					twoPhaseScheduler.writeLock(transaction, account2)
 					transactionManagerCommands.addCommands(transaction, senderDbResult)
-					transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, account1))
-					transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, account2))
+					transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, account1))
+					transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, account2))
 					transactionManagerCommands.commit(transaction)
 				}
 			}
 			transactionManagerCommands.addCommands(transaction, senderDb)
-			transactionManagerCommands.addCommands(transaction, History(historyRepository, transaction, senderDb))
+			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, senderDb))
 			transactionManagerCommands.commit(transaction)
 			
 			twoPhaseScheduler.releaseLocks(transaction)
