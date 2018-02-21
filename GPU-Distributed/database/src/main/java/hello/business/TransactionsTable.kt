@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class TransactionsTable {
+open class TransactionsTable {
 	private val transactions = Collections.synchronizedSet(mutableSetOf<Transaction>())
 	
 	

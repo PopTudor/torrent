@@ -1,5 +1,6 @@
 import hello.AbortException
 import hello.AccountManagerService
+import hello.TransactionManagerCommands
 import hello.business.*
 import hello.data.account.Account
 import org.junit.Assert
@@ -11,7 +12,7 @@ class AccountManagerServiceTest {
 	lateinit var accountManagerService: AccountManagerService
 	lateinit var accountRepository: AccountRepositoryMock
 	lateinit var twoPhaseScheduler: TwoPhaseScheduler
-	lateinit var transactionManager: TransactionManager
+	lateinit var transactionManagerCommands: TransactionManagerCommands
 	lateinit var transactionsTable: TransactionsTable
 	lateinit var locksTable: LocksTable
 	lateinit var waitForGraphTable: WaitForGraphTable
@@ -23,8 +24,8 @@ class AccountManagerServiceTest {
 		waitForGraphTable = WaitForGraphTable(transactionsTable)
 		accountRepository = AccountRepositoryMock()
 		twoPhaseScheduler = TwoPhaseScheduler(locksTable, waitForGraphTable)
-		transactionManager = TransactionManager()
-		accountManagerService = AccountManagerService(accountRepository, twoPhaseScheduler, transactionManager)
+		transactionManagerCommands = TransactionManagerCommands()
+		accountManagerService = AccountManagerService(accountRepository, twoPhaseScheduler, transactionManagerCommands)
 	}
 	
 	@Test

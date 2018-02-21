@@ -5,7 +5,7 @@ import java.util.*
 
 
 @Service
-class WaitForGraphTable(
+open class WaitForGraphTable(
 		val transactionsTable: TransactionsTable
 ) {
 	private val graph = Collections.synchronizedSet(mutableSetOf<Node>())

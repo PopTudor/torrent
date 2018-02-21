@@ -3,7 +3,7 @@ package hello
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
-@SpringBootApplication(scanBasePackages = arrayOf("hello.data", "hello"))
+@SpringBootApplication
 open class Application {
 	companion object {
 		@JvmStatic

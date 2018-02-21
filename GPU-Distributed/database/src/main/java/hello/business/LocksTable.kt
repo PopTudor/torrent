@@ -5,7 +5,7 @@ import org.springframework.util.LinkedMultiValueMap
 import java.util.*
 
 @Service
-class LocksTable(val transactionsTable: TransactionsTable) {
+open class LocksTable(val transactionsTable: TransactionsTable) {
 	private val locks = Collections.synchronizedMap(LinkedMultiValueMap<Any, Lock>())
 	
 	@Synchronized

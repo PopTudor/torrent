@@ -1,11 +1,12 @@
-package hello.business
+package hello
 
+import hello.business.Transaction
 import hello.business.command.Command
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class TransactionManager {
+open class TransactionManagerCommands {
 	// transaction -> list Operation
 	private val commands = Collections.synchronizedMap(mutableMapOf<Transaction, MutableList<Command>>())
 	// transaction -> list reverse Operation

@@ -1,7 +1,6 @@
 package hello
 
 import hello.business.Transaction
-import hello.business.TransactionManager
 import hello.business.TransactionStatus
 import hello.business.TwoPhaseScheduler
 import hello.business.command.CreateAccount
@@ -15,7 +14,7 @@ import org.springframework.stereotype.Service
 class AccountManagerService(
 		private val accountRepository: AccountRepository,
 		private val twoPhaseScheduler: TwoPhaseScheduler,
-		private val transactionManager: TransactionManager
+		private val transactionManagerCommands: TransactionManagerCommands
 ) {
 	init {
 //		accountRepository.save(Account("tudor","parola",100.0))
@@ -28,14 +27,14 @@ class AccountManagerService(
 			val createUser = CreateAccount(accountRepository, account)
 			
 			twoPhaseScheduler.writeLock(transaction, account)
-			transactionManager.addCommands(transaction, createUser)
-			transactionManager.commit(transaction)
+			transactionManagerCommands.addCommands(transaction, createUser)
+			transactionManagerCommands.commit(transaction)
 			
 			twoPhaseScheduler.releaseLocks(transaction) // comment to create deadlock by not releasing lock
 			transaction.status = TransactionStatus.COMMIT
 		} catch (abortException: AbortException) {
 			println("rollback create: ${abortException.transaction}")
-			transactionManager.rollback(transaction)
+			transactionManagerCommands.rollback(transaction)
 			twoPhaseScheduler.releaseLocks(transaction)
 			transaction.status = TransactionStatus.ABORT
 		}
@@ -54,7 +53,7 @@ class AccountManagerService(
 				if (it == null) throw AbortException(transaction)
 			}
 			
-			transactionManager.addCommands(transaction, getUser)
+			transactionManagerCommands.addCommands(transaction, getUser)
 
 //			TransactionHistory += transaction
 //

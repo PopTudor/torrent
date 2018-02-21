@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-class AccountController(private val accountManagerService: AccountManagerService) {
+class AccountController(val accountManagerService: AccountManagerService) {
 	
 	@PostMapping("/deposit")
 	fun deposit(@RequestBody deposit: Deposit): DepositStatus {
