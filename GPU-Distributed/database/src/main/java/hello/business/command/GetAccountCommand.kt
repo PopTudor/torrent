@@ -9,7 +9,6 @@ class GetAccountCommand(
 ) : Command {
 	var resultAccount: Account? = null
 	override var reverseCommand: Command? = null
-		get() = EmptyCommand()
 	
 	override fun execute() {
 		resultAccount = accountRepository.findByName(name).firstOrNull()

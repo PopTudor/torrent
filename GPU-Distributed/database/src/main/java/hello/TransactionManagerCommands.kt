@@ -22,7 +22,6 @@ open class TransactionManagerCommands {
 			if (reverseCommand != null) {
 				if (executedCommands[transaction] == null) {
 					executedCommands[transaction] = mutableListOf(reverseCommand)
-					
 				} else {
 					executedCommands[transaction]!! += reverseCommand
 				}

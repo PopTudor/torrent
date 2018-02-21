@@ -9,7 +9,6 @@ class CreateHistoryCommand(val historyRepository: HistoryRepository,
 						   val changedRes: Any
 ) : Command {
 	override var reverseCommand: Command? = null
-		get() = EmptyCommand()
 	
 	override fun execute() {
 		historyRepository.save(History(transaction))
