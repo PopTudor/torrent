@@ -1,8 +1,7 @@
 package hello.business.command
 
 class EmptyCommand : Command {
-	override val reverseCommand: Command?
-		get() = EmptyCommand()
+	override var reverseCommand: Command? = EmptyCommand()
 	
 	override fun execute() {
 		println("nothing to do")

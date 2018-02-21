@@ -1,6 +1,5 @@
 package hello.data.payment
 
-import java.sql.Timestamp
 import javax.persistence.*
 
 @Entity
@@ -13,6 +12,4 @@ class Payment(
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pk_sequence")
 	@Column(name = "id", unique = true, nullable = false)
 	val id = 0
-	var timestamp = Timestamp(System.currentTimeMillis())
-	
 }
