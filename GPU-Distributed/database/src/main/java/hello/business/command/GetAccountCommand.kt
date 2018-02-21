@@ -3,17 +3,15 @@ package hello.business.command
 import hello.data.account.Account
 import hello.data.account.AccountRepository
 
-class GetAccount(
+class GetAccountCommand(
 		val accountRepository: AccountRepository,
-		val name: String,
-		val callback: (Account?) -> Unit
+		val name: String
 ) : Command {
-	
+	var resultAccount: Account? = null
 	override var reverseCommand: Command? = null
 		get() = EmptyCommand()
 	
 	override fun execute() {
-		val account = accountRepository.findByName(name).firstOrNull()
-		callback(account)
+		resultAccount = accountRepository.findByName(name).firstOrNull()
 	}
 }
