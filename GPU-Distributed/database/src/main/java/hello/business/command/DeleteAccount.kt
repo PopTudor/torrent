@@ -7,7 +7,8 @@ class DeleteAccount(
 		val accountRepository: AccountRepository,
 		val account: Account
 ) : Command {
-	override var reverseCommand: Command? = CreateAccount(accountRepository, account)
+	override var reverseCommand: Command? = null
+		get() = CreateAccount(accountRepository, account)
 	
 	override fun execute() {
 		accountRepository.delete(account)

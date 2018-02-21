@@ -9,7 +9,8 @@ class CreateAccount(
 		val account: Account
 ) : Command {
 	
-	override var reverseCommand: Command? = DeleteAccount(accountRepository, account)
+	override var reverseCommand: Command? = null
+		get() = DeleteAccount(accountRepository, account)
 	
 	override fun execute() {
 		if (account.balance.toInt() != 0) throw RollbackException("Balance must be 0 for new accounts")

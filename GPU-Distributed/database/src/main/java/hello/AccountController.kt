@@ -1,8 +1,8 @@
 package hello
 
-import hello.data.Deposit
-import hello.data.DepositStatus
 import hello.data.account.Account
+import hello.data.account.Deposit
+import hello.data.account.DepositStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

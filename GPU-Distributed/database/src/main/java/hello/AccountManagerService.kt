@@ -4,11 +4,14 @@ import hello.business.Transaction
 import hello.business.TransactionStatus
 import hello.business.TwoPhaseScheduler
 import hello.business.command.*
-import hello.data.DepositStatus
 import hello.data.account.Account
 import hello.data.account.AccountRepository
 import hello.data.account.AccountStatus
+import hello.data.account.DepositStatus
 import hello.data.history.HistoryRepository
+import hello.data.order.Order
+import hello.data.order.OrderStatus
+import hello.data.order.OrderType
 import org.springframework.stereotype.Service
 
 @Service
@@ -134,6 +137,42 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return DepositStatus(deposit, user)
 			transaction.status == TransactionStatus.ABORT -> return DepositStatus(0.0, "Could not be withdrawn")
+			else -> throw RuntimeException("When statement must have an else branch")
+		}
+	}
+	
+	fun createOrder(account: Account, amount: Double): OrderStatus {
+		val transaction = Transaction(status = TransactionStatus.ACTIVE)
+		val order = Order(amount, OrderType.BUY, account)
+		try {
+			if (amount < 0) return OrderStatus("Could not buy $amount")
+			
+			twoPhaseScheduler.readLock(transaction, account)
+			val getUser = GetAccount(accountRepository, account.name) { account ->
+				if (account == null) throw AbortException(transaction)
+				val backupAccount = account.copy()
+				
+				account.balance -= amount
+				val withdrawnAcc = UpdateAccount(accountRepository, account)
+				withdrawnAcc.reverseCommand = UndoUpdateAccount(accountRepository, backupAccount)
+				
+				twoPhaseScheduler.writeLock(transaction, account)
+				transactionManagerCommands.addCommands(transaction, withdrawnAcc)
+				transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, withdrawnAcc))
+				transactionManagerCommands.commit(transaction)
+			}
+			transactionManagerCommands.addCommands(transaction, getUser)
+			transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, getUser))
+			transactionManagerCommands.commit(transaction)
+			
+			twoPhaseScheduler.releaseLocks(transaction)
+			transaction.status = TransactionStatus.COMMIT
+		} catch (abortException: AbortException) {
+			abort(abortException.transaction)
+		}
+		when {
+			transaction.status == TransactionStatus.COMMIT -> return OrderStatus("$order created")
+			transaction.status == TransactionStatus.ABORT -> return OrderStatus("could not create order")
 			else -> throw RuntimeException("When statement must have an else branch")
 		}
 	}

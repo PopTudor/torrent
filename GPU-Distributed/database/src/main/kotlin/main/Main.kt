@@ -1,8 +1,8 @@
 package main
 
 import com.google.gson.GsonBuilder
-import hello.data.Deposit
-import hello.data.DepositStatus
+import hello.data.account.Deposit
+import hello.data.account.DepositStatus
 import io.reactivex.Observable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

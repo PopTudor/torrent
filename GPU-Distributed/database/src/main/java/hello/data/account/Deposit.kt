@@ -1,4 +1,4 @@
-package hello.data
+package hello.data.account
 
 data class Deposit(
 		val deposit: Double = 0.0,

@@ -9,7 +9,8 @@ class GetAccount(
 		val callback: (Account?) -> Unit
 ) : Command {
 	
-	override var reverseCommand: Command? = EmptyCommand()
+	override var reverseCommand: Command? = null
+		get() = EmptyCommand()
 	
 	override fun execute() {
 		val account = accountRepository.findByName(name).firstOrNull()

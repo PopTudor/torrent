@@ -7,7 +7,8 @@ class UndoUpdateAccount(
 		val accountRepository: AccountRepository,
 		val account: Account
 ) : Command {
-	override var reverseCommand: Command? = UpdateAccount(accountRepository, account)
+	override var reverseCommand: Command? = null
+		get() = UpdateAccount(accountRepository, account)
 	
 	override fun execute() {
 		accountRepository.save(account)
