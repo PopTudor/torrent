@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface OrdersRepository : CrudRepository<Order, String> {
+	fun findOrderByAccountId(accountId: String)
 }

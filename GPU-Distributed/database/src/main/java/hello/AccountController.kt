@@ -3,6 +3,7 @@ package hello
 import hello.data.account.Account
 import hello.data.account.Deposit
 import hello.data.account.DepositStatus
+import hello.data.order.Order
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class AccountController(val accountManagerService: AccountManagerService) {
 	
 	@PostMapping("/deposit")
-	fun deposit(@RequestBody deposit: Deposit): DepositStatus {
+	fun deposit(@RequestBody deposit: Deposit): DepositStatus? {
 		if (deposit.deposit <= 0) return DepositStatus(0.0, "$deposit was added to your user")
 		
 		return accountManagerService.deposit(deposit.deposit, deposit.user)
@@ -28,5 +29,14 @@ class AccountController(val accountManagerService: AccountManagerService) {
 			return ResponseEntity.unprocessableEntity().body(account)
 		else
 			return ResponseEntity.ok(status)
+	}
+	
+	@PostMapping("/createOrder")
+	fun createOrder(@RequestBody order: Order): ResponseEntity<Order> {
+		val status = accountManagerService.createOrder(order)
+		if (status == null)
+			return ResponseEntity.unprocessableEntity().body(order)
+		else
+			return ResponseEntity.ok(order)
 	}
 }

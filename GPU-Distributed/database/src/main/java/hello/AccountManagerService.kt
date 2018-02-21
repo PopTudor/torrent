@@ -12,12 +12,14 @@ import hello.data.history.HistoryRepository
 import hello.data.order.Order
 import hello.data.order.OrderStatus
 import hello.data.order.OrderType
+import hello.data.order.OrdersRepository
 import org.springframework.stereotype.Service
 
 @Service
 class AccountManagerService(
 		private val accountRepository: AccountRepository,
 		private val historyRepository: HistoryRepository,
+		private val orderRepository: OrdersRepository,
 		private val twoPhaseScheduler: TwoPhaseScheduler,
 		private val transactionManagerCommands: TransactionManagerCommands
 ) {
@@ -46,7 +48,7 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return account
 			transaction.status == TransactionStatus.ABORT -> return null
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
@@ -69,11 +71,11 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return account
 			transaction.status == TransactionStatus.ABORT -> return null
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
-	fun deposit(deposit: Double, user: String): DepositStatus {
+	fun deposit(deposit: Double, user: String): DepositStatus? {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		try {
 			twoPhaseScheduler.readLock(transaction, user)
@@ -102,11 +104,11 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return DepositStatus(deposit, user)
 			transaction.status == TransactionStatus.ABORT -> return DepositStatus(deposit, "Could not be deposited")
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
-	fun withdraw(deposit: Double, user: String): DepositStatus {
+	fun withdraw(deposit: Double, user: String): DepositStatus? {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		try {
 			if (deposit < 0 || user.isBlank()) return DepositStatus(deposit, "Could not be withdrawn from $user")
@@ -137,28 +139,30 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return DepositStatus(deposit, user)
 			transaction.status == TransactionStatus.ABORT -> return DepositStatus(0.0, "Could not be withdrawn")
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
-	fun createOrder(account: Account, amount: Double): OrderStatus {
+	fun createOrder(order: Order): OrderStatus? {
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
-		val order = Order(amount, OrderType.BUY, account)
 		try {
-			if (amount < 0) return OrderStatus("Could not buy $amount")
+			if (order.amount < 0) return OrderStatus("Could not buy ${order.amount}")
 			
-			twoPhaseScheduler.readLock(transaction, account)
-			val getUser = GetAccount(accountRepository, account.name) { account ->
-				if (account == null) throw AbortException(transaction)
-				val backupAccount = account.copy()
+			twoPhaseScheduler.readLock(transaction, order.account)
+			val getUser = GetAccount(accountRepository, order.account.name) { dbAccount ->
+				if (dbAccount == null) throw AbortException(transaction)
+				val backupAccount = dbAccount.copy()
 				
-				account.balance -= amount
-				val withdrawnAcc = UpdateAccount(accountRepository, account)
+				dbAccount.balance -= order.amount
+				val withdrawnAcc = UpdateAccount(accountRepository, dbAccount)
 				withdrawnAcc.reverseCommand = UndoUpdateAccount(accountRepository, backupAccount)
-				
-				twoPhaseScheduler.writeLock(transaction, account)
 				transactionManagerCommands.addCommands(transaction, withdrawnAcc)
 				transactionManagerCommands.addCommands(transaction, HistoryCommand(historyRepository, transaction, withdrawnAcc))
+				
+				val orderToSave = Order(order.amount, OrderType.BUY, dbAccount)
+				transactionManagerCommands.addCommands(transaction, CreateOrder(orderRepository, orderToSave))
+				
+				twoPhaseScheduler.writeLock(transaction, dbAccount)
 				transactionManagerCommands.commit(transaction)
 			}
 			transactionManagerCommands.addCommands(transaction, getUser)
@@ -173,11 +177,11 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return OrderStatus("$order created")
 			transaction.status == TransactionStatus.ABORT -> return OrderStatus("could not create order")
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
-	fun changeAccountPassword(account: Account, password: String): AccountStatus {
+	fun changeAccountPassword(account: Account, password: String): AccountStatus? {
 		if (password.isBlank()) return AccountStatus("$account could not be changed")
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		try {
@@ -207,11 +211,11 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return AccountStatus("Changed password for $account")
 			transaction.status == TransactionStatus.ABORT -> return AccountStatus("$account could not be changed")
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
-	fun transfer(sender: Account, receiver: Account, amount: Double): AccountStatus {
+	fun transfer(sender: Account, receiver: Account, amount: Double): AccountStatus? {
 		if (amount <= 0.0001) return AccountStatus("could transfer $amount from $sender to $receiver")
 		val transaction = Transaction(status = TransactionStatus.ACTIVE)
 		try {
@@ -253,7 +257,7 @@ class AccountManagerService(
 		when {
 			transaction.status == TransactionStatus.COMMIT -> return AccountStatus("Sent $amount from $sender to $receiver")
 			transaction.status == TransactionStatus.ABORT -> return AccountStatus("Could not send $amount from $sender to $receiver")
-			else -> throw RuntimeException("When statement must have an else branch")
+			else -> return null
 		}
 	}
 	
