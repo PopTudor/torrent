@@ -14,7 +14,4 @@ data class Account(
 		@javax.persistence.Id
 		@GeneratedValue(strategy = GenerationType.AUTO)
 		var id: Long = 0
-) : Serializable {
-
-	
-}
+) : Serializable

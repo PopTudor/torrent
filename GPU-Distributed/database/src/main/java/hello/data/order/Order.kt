@@ -7,12 +7,10 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class Order(
 		val amount: Double,
 		val orderType: OrderType,
-		val account: Account
-) {
-	@javax.persistence.Id
-	var id: String? = null
-	
-}
+		val account: Account,
+		@javax.persistence.Id
+		var id: String? = null
+)
 
 enum class OrderType {
 	BUY, SELL
