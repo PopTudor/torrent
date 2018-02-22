@@ -5,6 +5,7 @@ import hello.data.account.Deposit
 import hello.data.account.DepositStatus
 import hello.data.account.Withdraw
 import hello.data.order.Order
+import hello.data.order.OrderStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -40,11 +41,11 @@ class AccountController(val accountManagerService: AccountManagerService) {
 	}
 	
 	@PostMapping("/createSellOrder")
-	fun createOrder(@RequestBody order: Order): ResponseEntity<Order> {
+	fun createOrder(@RequestBody order: Order): ResponseEntity<OrderStatus> {
 		val status = accountManagerService.createSellOrder(order)
 		if (status == null)
-			return ResponseEntity.unprocessableEntity().body(order)
+			return ResponseEntity.unprocessableEntity().body(OrderStatus("Could not create order"))
 		else
-			return ResponseEntity.ok(order)
+			return ResponseEntity.ok(status)
 	}
 }

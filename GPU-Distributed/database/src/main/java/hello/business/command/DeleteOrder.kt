@@ -11,6 +11,6 @@ class DeleteOrder(
 		get() = CreateOrderCommand(ordersRepository, order)
 	
 	override fun execute() {
-		ordersRepository.save(order)
+		ordersRepository.delete(order)
 	}
 }

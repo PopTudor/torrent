@@ -148,6 +148,7 @@ class AccountManagerService(
 			
 			order.account = dbAccount.name
 			val createOrder = CreateOrderCommand(orderRepository, order)
+			createOrder.reverseCommand = DeleteOrder(orderRepository, order)
 			
 			twoPhaseScheduler.writeLock(transaction, dbAccount)
 			transactionManagerCommands.addCommands(transaction, withdrawnAcc)
