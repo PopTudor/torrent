@@ -1,17 +1,15 @@
 package hello.data.order
 
-import hello.data.account.Account
+import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document
 data class Order(
-		val amount: Double,
-		val orderType: OrderType,
-		val account: Account,
-		@javax.persistence.Id
+		var amount: Double,
+		var orderType: String,
+		var account: String,
+		@Id
 		var id: String? = null
-)
-
-enum class OrderType {
-	BUY, SELL
+) {
+	constructor() : this(0.0, "", "", null)
 }

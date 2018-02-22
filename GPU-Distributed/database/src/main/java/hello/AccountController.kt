@@ -4,6 +4,7 @@ import hello.data.account.Account
 import hello.data.account.Deposit
 import hello.data.account.DepositStatus
 import hello.data.account.Withdraw
+import hello.data.order.Order
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -37,13 +38,13 @@ class AccountController(val accountManagerService: AccountManagerService) {
 		else
 			return ResponseEntity.ok(status)
 	}
-
-//	@PostMapping("/createOrder")
-//	fun createOrder(@RequestBody order: Order): ResponseEntity<Order> {
-//		val status = accountManagerService.createOrder(order)
-//		if (status == null)
-//			return ResponseEntity.unprocessableEntity().body(order)
-//		else
-//			return ResponseEntity.ok(order)
-//	}
+	
+	@PostMapping("/createSellOrder")
+	fun createOrder(@RequestBody order: Order): ResponseEntity<Order> {
+		val status = accountManagerService.createSellOrder(order)
+		if (status == null)
+			return ResponseEntity.unprocessableEntity().body(order)
+		else
+			return ResponseEntity.ok(order)
+	}
 }

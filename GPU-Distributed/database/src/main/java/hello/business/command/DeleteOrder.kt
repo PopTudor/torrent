@@ -8,7 +8,7 @@ class DeleteOrder(
 		val order: Order
 ) : Command {
 	override var reverseCommand: Command? = null
-		get() = CreateOrder(ordersRepository, order)
+		get() = CreateOrderCommand(ordersRepository, order)
 	
 	override fun execute() {
 		ordersRepository.save(order)

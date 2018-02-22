@@ -3,7 +3,7 @@ package hello.business.command
 import hello.data.order.Order
 import hello.data.order.OrdersRepository
 
-class CreateOrder(
+class CreateOrderCommand(
 		val ordersRepository: OrdersRepository,
 		val order: Order
 ) : Command {
